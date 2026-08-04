@@ -1,62 +1,74 @@
 # Sistem Monitoring Harga — GitHub Pages
 
-Dashboard berbentuk **Single Page Application (SPA)**. Hanya ada satu halaman web, tetapi menu di sidebar menampilkan beberapa sub-analisis tanpa memuat ulang halaman.
+## Pemetaan kolom yang digunakan
 
-## Menu
+| Sheet | Nama responden | Prev | Current | Keterangan |
+|---|---|---|---|---|
+| Mingguan | K | V | W | Y |
+| Dwi Mingguan | K | P | Q | S |
+| bulanan | K | L | M | O |
 
-- Dashboard
-- Mingguan
-- Dwi Mingguan
-- Bulanan
-- Komoditas
-- Pasar
-- Evaluasi
-- Rekap Data
+Perubahan dihitung oleh dashboard dengan rumus `(Current - Prev) / Prev × 100%`.
 
-## Sumber data
+## Fitur revisi
 
-Dashboard membaca Google Sheets secara langsung:
+- Menu Mingguan, Dwi Mingguan, dan Bulanan digabung menjadi **Analisis Periode**.
+- Pilihan periode: Mingguan, Dwi Mingguan, Bulanan, dan **Tampilkan Semua**.
+- Kolom **Nama Responden** dari kolom K.
+- Kolom **Keterangan** dapat diedit.
+- Tabel dapat diurutkan dengan mengklik judul kolom.
+- Filter awal hanya menampilkan perubahan `≤ -20%` atau `≥ +20%`. Hilangkan centang untuk melihat semua data.
 
-`https://docs.google.com/spreadsheets/d/1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg/edit`
+## A. Pasang Google Apps Script agar Keterangan bisa disimpan
 
-Pastikan akses spreadsheet: **Siapa saja yang memiliki link → Pelihat**.
+GitHub Pages hanya dapat membaca data. Agar perubahan Keterangan masuk ke spreadsheet, gunakan Apps Script sebagai penghubung.
 
-Nama sheet yang dibaca:
+1. Buka spreadsheet.
+2. Pilih **Ekstensi → Apps Script**.
+3. Hapus isi `Code.gs`, lalu salin seluruh isi file `Code.gs` dari paket ini.
+4. Klik **Deploy → New deployment**.
+5. Pilih jenis **Web app**.
+6. Atur:
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+7. Klik **Deploy** dan beri izin.
+8. Salin URL Web App yang berakhiran `/exec`.
+9. Buka file `script.js`, lalu ganti:
 
-- `Mingguan`
-- `Dwi Mingguan`
-- `bulanan`
+```javascript
+appsScriptUrl:'PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI'
+```
 
-Kolom harga:
+menjadi, misalnya:
 
-- Mingguan: `AVR PREV` dan `AVR CURRENT`
-- Dwi Mingguan: `AVR PREV` dan `AVR CURRENT`
-- Bulanan: `PREV` dan `CURRENT`
+```javascript
+appsScriptUrl:'https://script.google.com/macros/s/XXXXXXXX/exec'
+```
 
-## Login
+10. Simpan file.
+
+Setiap kali `Code.gs` diubah, buat deployment versi baru melalui **Deploy → Manage deployments → Edit → New version → Deploy**.
+
+## B. Upload ke GitHub
+
+Unggah file berikut ke repository GitHub Pages:
+
+- `index.html`
+- `style.css`
+- `script.js`
+- `README.md`
+
+`Code.gs` tidak perlu diunggah ke GitHub; file itu ditempelkan ke editor Apps Script.
+
+Aktifkan **Settings → Pages → Deploy from a branch → main → /(root)**.
+
+## C. Akses spreadsheet
+
+Agar data dapat dibaca dashboard, spreadsheet harus dapat dilihat oleh **Anyone with the link / Siapa saja yang memiliki link**. Hak edit spreadsheet tidak perlu dibuka untuk publik; penulisan dilakukan oleh Web App Apps Script milik pemilik spreadsheet.
+
+## Login dashboard
 
 - Username: `harga1900`
 - Password: `harga1900`
 
-> GitHub Pages adalah hosting statis. Login dalam proyek ini dibuat dengan JavaScript dan hanya membatasi tampilan. Jangan gunakan untuk menyimpan data rahasia.
-
-## Cara upload ke GitHub
-
-1. Buat repository baru, misalnya `dashboard-harga`.
-2. Ekstrak ZIP proyek.
-3. Upload `index.html`, `style.css`, `script.js`, dan `README.md` ke root repository.
-4. Buka **Settings → Pages**.
-5. Pilih **Deploy from a branch**.
-6. Pilih branch **main** dan folder **/(root)**.
-7. Klik **Save**.
-8. Buka alamat yang diberikan GitHub Pages.
-
-## Memperbarui dashboard
-
-Data tidak perlu diunggah kembali ke GitHub. Cukup perbarui Google Sheets, kemudian klik tombol **Muat ulang** pada dashboard.
-
-## Pemetaan kolom harga
-Dashboard membaca kolom berdasarkan posisi kolom tetap, bukan berdasarkan kemiripan nama header:
-- Mingguan: AVR PREV kolom V dan AVR CURRENT kolom W.
-- Dwi Mingguan: AVR PREV kolom P dan AVR CURRENT kolom Q.
-- Bulanan: PREV kolom L dan CURRENT kolom M.
+Catatan: login GitHub Pages berbasis JavaScript dan bukan autentikasi server untuk data rahasia.
