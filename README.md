@@ -101,3 +101,11 @@ Pemetaan penulisan:
 - Nilai 0 dan kosong tidak dihitung.
 - Keterangan tetap menggunakan Y (Mingguan), S (Dwi Mingguan), dan O (bulanan).
 - Gunakan tombol Sinkronkan Spreadsheet atau Muat ulang untuk menarik perubahan Keterangan yang dibuat langsung di Google Sheets.
+
+
+## Logika evaluasi deret harga
+
+- Mingguan: Prev M1 → Prev M2 → Prev M3 → Prev M4 → Prev M5 → Current M1 → Current M2 → Current M3 → Current M4 → Current M5.
+- Dwi Mingguan: Prev M1 → Prev M3 → Current M1 → Current M3.
+- Bulanan: Previous → Current.
+- Nilai 0 dan sel kosong dilewati. Perubahan dihitung dari titik valid terakhir ke titik valid berikutnya.

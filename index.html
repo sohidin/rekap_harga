@@ -33,7 +33,7 @@
       <div class="nav-label">ANALISIS LANJUTAN</div>
       <button class="nav-item" data-view="commodity"><span>◈</span>Komoditas</button>
       <button class="nav-item" data-view="market"><span>⌖</span>Pasar</button>
-      <button class="nav-item" data-view="trend"><span>▥</span>Evaluasi Antar Periode</button>
+      <button class="nav-item" data-view="trend"><span>▥</span>Evaluasi Deret Harga</button>
       <button class="nav-item" data-view="evaluation"><span>⚑</span>Evaluasi Ringkas</button>
       <button class="nav-item" data-view="recap"><span>≣</span>Rekap Data</button>
     </nav>
@@ -88,7 +88,7 @@
       <div id="trendSummary" class="trend-summary"></div>
       <article class="panel">
         <div class="panel-head trend-toolbar">
-          <div><h3>Heatmap perubahan harga</h3><p>Mingguan: M1–M5; Dwi Mingguan: M1 dan M3; Bulanan: Previous–Current.</p></div>
+          <div><h3>Heatmap deret perubahan harga</h3><p>Mingguan mengikuti Prev M1→M5 lalu Current M1→M5; Dwi Mingguan mengikuti Prev M1→M3 lalu Current M1→M3; Bulanan mengikuti Previous→Current. Nilai 0/kosong dilewati.</p></div>
           <label>Kelompok perubahan
             <select id="trendCategoryFilter" class="focus-select"><option value="">Semua kelompok</option></select>
           </label>
