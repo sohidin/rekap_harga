@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Dashboard rekap dan evaluasi perubahan harga mingguan, dwi mingguan, dan bulanan." />
+  <title>Dashboard Rekap & Evaluasi Harga</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">RH</div>
+        <div><strong>Rekap Harga</strong><span>Monitoring & evaluasi</span></div>
+      </div>
+      <nav>
+        <a class="active" href="#ringkasan">Ringkasan</a>
+        <a href="#grafik">Analisis</a>
+        <a href="#evaluasi">Evaluasi</a>
+        <a href="#tabel">Data perubahan</a>
+      </nav>
+      <div class="source-box">
+        <span>Sumber data</span>
+        <strong>Google Sheets</strong>
+        <small>Data dimuat otomatis saat halaman dibuka.</small>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">DASHBOARD MONITORING HARGA</p>
+          <h1>Rekap dan Evaluasi Perubahan Harga</h1>
+          <p id="lastUpdate" class="muted">Memuat data terbaru…</p>
+        </div>
+        <button id="refreshBtn" class="primary-btn">↻ Muat ulang</button>
+      </header>
+
+      <section class="filter-panel">
+        <label>Periode
+          <select id="periodFilter">
+            <option value="Mingguan">Mingguan</option>
+            <option value="Dwi Mingguan">Dwi Mingguan</option>
+            <option value="bulanan">Bulanan</option>
+          </select>
+        </label>
+        <label>Kabupaten/Kota<select id="kabFilter"><option value="">Semua wilayah</option></select></label>
+        <label>Komoditas<select id="commodityFilter"><option value="">Semua komoditas</option></select></label>
+        <label>Jenis pasar<select id="marketFilter"><option value="">Semua jenis pasar</option></select></label>
+        <label class="search-label">Pencarian<input id="searchFilter" type="search" placeholder="Kualitas, pasar, atau responden…" /></label>
+      </section>
+
+      <div id="status" class="status hidden"></div>
+
+      <section id="ringkasan" class="kpi-grid">
+        <article class="kpi"><span>Total observasi</span><strong id="kpiTotal">–</strong><small>Baris sesuai filter</small></article>
+        <article class="kpi"><span>Harga naik</span><strong id="kpiUp">–</strong><small id="kpiUpShare">–</small></article>
+        <article class="kpi"><span>Harga turun</span><strong id="kpiDown">–</strong><small id="kpiDownShare">–</small></article>
+        <article class="kpi"><span>Tidak berubah</span><strong id="kpiStable">–</strong><small id="kpiStableShare">–</small></article>
+        <article class="kpi accent"><span>Perubahan ekstrem</span><strong id="kpiExtreme">–</strong><small>|perubahan| ≥ 20%</small></article>
+      </section>
+
+      <section id="grafik" class="chart-grid">
+        <article class="panel chart-panel">
+          <div class="panel-head"><div><h2>Komposisi perubahan</h2><p>Naik, turun, dan tetap</p></div></div>
+          <div class="chart-wrap"><canvas id="compositionChart"></canvas></div>
+        </article>
+        <article class="panel chart-panel wide">
+          <div class="panel-head"><div><h2>Komoditas dengan kenaikan tertinggi</h2><p>Rata-rata perubahan harga menurut komoditas</p></div></div>
+          <div class="chart-wrap"><canvas id="topCommodityChart"></canvas></div>
+        </article>
+        <article class="panel chart-panel wide">
+          <div class="panel-head"><div><h2>Sebaran perubahan per jenis pasar</h2><p>Rata-rata persentase perubahan</p></div></div>
+          <div class="chart-wrap"><canvas id="marketChart"></canvas></div>
+        </article>
+        <article class="panel chart-panel">
+          <div class="panel-head"><div><h2>Kualitas data</h2><p>Kelengkapan harga saat ini</p></div></div>
+          <div class="chart-wrap"><canvas id="qualityChart"></canvas></div>
+        </article>
+      </section>
+
+      <section id="evaluasi" class="panel evaluation-panel">
+        <div class="panel-head"><div><h2>Evaluasi otomatis</h2><p>Kesimpulan berdasarkan data dan filter aktif</p></div><span id="riskBadge" class="badge">–</span></div>
+        <div id="evaluationText" class="evaluation-content"></div>
+      </section>
+
+      <section id="tabel" class="panel">
+        <div class="panel-head"><div><h2>Perubahan yang perlu diperhatikan</h2><p>Diurutkan berdasarkan perubahan absolut terbesar</p></div><button id="downloadBtn" class="secondary-btn">Unduh CSV</button></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Wilayah</th><th>Komoditas</th><th>Kualitas</th><th>Jenis pasar</th><th>Responden</th><th class="num">Harga lalu</th><th class="num">Harga kini</th><th class="num">Perubahan</th><th>Status</th></tr></thead>
+            <tbody id="dataBody"><tr><td colspan="9" class="empty">Memuat data…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination"><button id="prevPage">← Sebelumnya</button><span id="pageInfo">Halaman 1</span><button id="nextPage">Berikutnya →</button></div>
+      </section>
+
+      <footer>Dashboard statis GitHub Pages • Sumber: Google Sheets</footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
