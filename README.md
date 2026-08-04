@@ -54,3 +54,9 @@ Kolom harga:
 ## Memperbarui dashboard
 
 Data tidak perlu diunggah kembali ke GitHub. Cukup perbarui Google Sheets, kemudian klik tombol **Muat ulang** pada dashboard.
+
+## Pemetaan kolom harga
+Dashboard membaca kolom berdasarkan posisi kolom tetap, bukan berdasarkan kemiripan nama header:
+- Mingguan: AVR PREV kolom V dan AVR CURRENT kolom W.
+- Dwi Mingguan: AVR PREV kolom P dan AVR CURRENT kolom Q.
+- Bulanan: PREV kolom L dan CURRENT kolom M.
