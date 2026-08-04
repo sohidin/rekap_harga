@@ -72,3 +72,23 @@ Agar data dapat dibaca dashboard, spreadsheet harus dapat dilihat oleh **Anyone 
 - Password: `harga1900`
 
 Catatan: login GitHub Pages berbasis JavaScript dan bukan autentikasi server untuk data rahasia.
+
+
+## Koreksi penyimpanan Keterangan
+
+Agar tombol **Simpan** benar-benar menulis ke spreadsheet:
+
+1. Tempel ulang isi `Code.gs` terbaru ke Apps Script.
+2. Klik **Deploy > Manage deployments**.
+3. Klik ikon pensil pada deployment Web App.
+4. Pada **Version**, pilih **New version**.
+5. Pastikan **Execute as: Me** dan **Who has access: Anyone**.
+6. Klik **Deploy**.
+7. Gunakan URL Web App yang berakhiran `/exec`, bukan `/dev`.
+8. Tempel URL tersebut pada `CONFIG.appsScriptUrl` di `script.js`.
+9. Upload ulang `script.js` ke GitHub dan tekan `Ctrl+F5` pada dashboard.
+
+Pemetaan penulisan:
+- Mingguan → kolom Y (25)
+- Dwi Mingguan → kolom S (19)
+- bulanan → kolom O (15)

@@ -1,6 +1,6 @@
 const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
-  appsScriptUrl:'https://script.google.com/macros/s/XXXXXXXX/exec',
+  appsScriptUrl:'https://script.google.com/macros/s/AKfycbwe2FvCpkYpEiXhWyMW2BXuqNB9TcJaNq9MqigpNk_UjKda8CA5VyGPnpnPmD0nBcrtWg/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25
 };
@@ -47,7 +47,54 @@ function rowHtml(x,recap=false){return `<tr class="${Math.abs(x.change||0)>=20?'
 function paginate(data,page){const pages=Math.max(1,Math.ceil(data.length/CONFIG.pageSize));page=Math.min(page,pages);return{rows:data.slice((page-1)*CONFIG.pageSize,page*CONFIG.pageSize),pages,page}}
 function renderPeriod(){const d=sortedData();$('periodCommodities').textContent=fmtInt(unique(d,'commodity').length);$('periodMarkets').textContent=fmtInt(unique(d,'market').length);$('periodRespondents').textContent=fmtInt(unique(d,'respondent').length);$('periodExtreme').textContent=fmtInt(d.filter(x=>Math.abs(x.change||0)>=20).length);const p=paginate(d,state.periodPage);state.periodPage=p.page;$('periodTableBody').innerHTML=p.rows.map(x=>rowHtml(x,false)).join('')||'<tr><td colspan="11">Tidak ada data sesuai filter.</td></tr>';$('periodPageInfo').textContent=`Halaman ${p.page} dari ${p.pages} • ${fmtInt(d.length)} data`;bindSaveButtons()}
 function renderRecap(){const d=sortedData(),p=paginate(d,state.page);state.page=p.page;$('recapBody').innerHTML=p.rows.map(x=>rowHtml(x,true)).join('')||'<tr><td colspan="12">Tidak ada data sesuai filter.</td></tr>';$('pageInfo').textContent=`Halaman ${p.page} dari ${p.pages} • ${fmtInt(d.length)} data`;bindSaveButtons()}
-async function saveNote(btn){const url=CONFIG.appsScriptUrl;if(!url||url.includes('PASTE_URL')){showStatus('URL Web App Apps Script belum diisi pada CONFIG.appsScriptUrl di script.js. Ikuti README.','error');return}const sheet=btn.dataset.sheet,row=Number(btn.dataset.row),note=$(btn.dataset.noteId).value;btn.classList.add('saving');btn.textContent='Menyimpan...';try{const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'updateNote',sheet,row,note,token:'harga1900'})});const out=await res.json();if(!out.ok)throw new Error(out.message||'Gagal menyimpan');const item=state.all.find(x=>x.sheet===sheet&&x.rowNumber===row);if(item)item.note=note;showStatus(`Keterangan ${sheet} baris ${row} berhasil disimpan.`)}catch(e){showStatus(`Gagal menyimpan: ${e.message}`,'error')}finally{btn.classList.remove('saving');btn.textContent='Simpan'}}
+async function saveNote(btn){
+  const url=String(CONFIG.appsScriptUrl||'').trim();
+  if(!url||url.includes('PASTE_URL')||!url.endsWith('/exec')){
+    showStatus('URL Web App belum benar. Isi CONFIG.appsScriptUrl dengan URL deployment yang berakhiran /exec.','error');
+    return;
+  }
+
+  const sheet=btn.dataset.sheet;
+  const row=Number(btn.dataset.row);
+  const noteEl=$(btn.dataset.noteId);
+  const note=noteEl ? noteEl.value : '';
+
+  btn.disabled=true;
+  btn.classList.add('saving');
+  btn.textContent='Menyimpan...';
+
+  try{
+    // Form URL encoded adalah "simple request", sehingga lebih kompatibel
+    // antara GitHub Pages dan Google Apps Script Web App.
+    const body=new URLSearchParams({
+      action:'updateNote',
+      sheet:String(sheet),
+      row:String(row),
+      note:String(note),
+      token:'harga1900',
+      ts:String(Date.now())
+    });
+
+    await fetch(url,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:body.toString(),
+      cache:'no-store'
+    });
+
+    const item=state.all.find(x=>x.sheet===sheet&&x.rowNumber===row);
+    if(item)item.note=note;
+    noteEl.dataset.savedValue=note;
+    showStatus(`Keterangan dikirim ke ${sheet}, baris ${row}. Periksa kolom ${item?.noteColumn||''} pada spreadsheet.`,'success');
+  }catch(e){
+    showStatus(`Gagal mengirim keterangan: ${e.message}`,'error');
+  }finally{
+    btn.disabled=false;
+    btn.classList.remove('saving');
+    btn.textContent='Simpan';
+  }
+}
 function bindSaveButtons(){document.querySelectorAll('.save-note').forEach(b=>{b.onclick=()=>saveNote(b)})}
 function renderCommodity(){const focus=$('commodityFocus').value||state.filtered[0]?.commodity||'';if(focus&&!$('commodityFocus').value)$('commodityFocus').value=focus;const d=state.filtered.filter(x=>x.commodity===focus),ap=avg(d.map(x=>x.prev)),ac=avg(d.map(x=>x.current));$('commodityPrev').textContent=fmtMoney(ap);$('commodityCurrent').textContent=fmtMoney(ac);$('commodityChange').textContent=ap?fmtPct(((ac-ap)/ap)*100):'–';$('commodityObs').textContent=fmtInt(d.length);const g=groupAvg(d,'kab').sort((a,b)=>Math.abs(b.value)-Math.abs(a.value)).slice(0,15);chart('commodityRegionChart','bar',g.map(x=>x.name),g.map(x=>x.value),'Perubahan (%)')}
 function renderMarket(){const g=groupAvg(state.filtered,'market').sort((a,b)=>Math.abs(b.value)-Math.abs(a.value)).slice(0,15);chart('marketRankingChart','bar',g.map(x=>x.name),g.map(x=>x.value),'Perubahan (%)')}
