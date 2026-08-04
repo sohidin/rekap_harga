@@ -1,25 +1,56 @@
-# Dashboard Rekap Harga
+# Sistem Monitoring Harga — GitHub Pages
 
-Dashboard GitHub Pages yang membaca data langsung dari Google Sheets.
+Dashboard berbentuk **Single Page Application (SPA)**. Hanya ada satu halaman web, tetapi menu di sidebar menampilkan beberapa sub-analisis tanpa memuat ulang halaman.
 
-## Fitur utama
-- Login: `harga1900` / `harga1900`
-- Pilihan Mingguan, Dwi Mingguan, dan Bulanan
-- Mingguan menggunakan kolom **AVR PREV** dan **AVR CURRENT**
-- Dwi Mingguan menggunakan kolom **AVR PREV** dan **AVR CURRENT**
-- Bulanan menggunakan kolom **PREV** dan **CURRENT**
-- Ringkasan rata-rata harga sebelumnya, harga saat ini, dan perubahan
-- Grafik, evaluasi otomatis, tabel, filter, dan ekspor CSV
-- Tombol langsung menuju Google Spreadsheet
+## Menu
 
-## Cara memperbarui GitHub
-1. Ekstrak ZIP.
-2. Di repository GitHub, buka **Add file > Upload files**.
-3. Unggah dan timpa `index.html`, `style.css`, `script.js`, dan `README.md`.
-4. Klik **Commit changes**.
-5. GitHub Pages akan memperbarui situs secara otomatis.
+- Dashboard
+- Mingguan
+- Dwi Mingguan
+- Bulanan
+- Komoditas
+- Pasar
+- Evaluasi
+- Rekap Data
 
-## Catatan keamanan
-Login ini berjalan di sisi browser (JavaScript), sehingga hanya berfungsi sebagai pembatas tampilan sederhana, bukan keamanan tingkat server. Username dan password dapat ditemukan oleh pengguna yang memeriksa source code. Untuk data rahasia, gunakan autentikasi server atau platform seperti Firebase Authentication/Cloudflare Access.
+## Sumber data
 
-Google Sheets harus dapat diakses oleh pengunjung dashboard, minimal **Anyone with the link – Viewer**.
+Dashboard membaca Google Sheets secara langsung:
+
+`https://docs.google.com/spreadsheets/d/1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg/edit`
+
+Pastikan akses spreadsheet: **Siapa saja yang memiliki link → Pelihat**.
+
+Nama sheet yang dibaca:
+
+- `Mingguan`
+- `Dwi Mingguan`
+- `bulanan`
+
+Kolom harga:
+
+- Mingguan: `AVR PREV` dan `AVR CURRENT`
+- Dwi Mingguan: `AVR PREV` dan `AVR CURRENT`
+- Bulanan: `PREV` dan `CURRENT`
+
+## Login
+
+- Username: `harga1900`
+- Password: `harga1900`
+
+> GitHub Pages adalah hosting statis. Login dalam proyek ini dibuat dengan JavaScript dan hanya membatasi tampilan. Jangan gunakan untuk menyimpan data rahasia.
+
+## Cara upload ke GitHub
+
+1. Buat repository baru, misalnya `dashboard-harga`.
+2. Ekstrak ZIP proyek.
+3. Upload `index.html`, `style.css`, `script.js`, dan `README.md` ke root repository.
+4. Buka **Settings → Pages**.
+5. Pilih **Deploy from a branch**.
+6. Pilih branch **main** dan folder **/(root)**.
+7. Klik **Save**.
+8. Buka alamat yang diberikan GitHub Pages.
+
+## Memperbarui dashboard
+
+Data tidak perlu diunggah kembali ke GitHub. Cukup perbarui Google Sheets, kemudian klik tombol **Muat ulang** pada dashboard.
