@@ -33,7 +33,8 @@
       <div class="nav-label">ANALISIS LANJUTAN</div>
       <button class="nav-item" data-view="commodity"><span>◈</span>Komoditas</button>
       <button class="nav-item" data-view="market"><span>⌖</span>Pasar</button>
-      <button class="nav-item" data-view="evaluation"><span>⚑</span>Evaluasi</button>
+      <button class="nav-item" data-view="trend"><span>▥</span>Evaluasi Antar Periode</button>
+      <button class="nav-item" data-view="evaluation"><span>⚑</span>Evaluasi Ringkas</button>
       <button class="nav-item" data-view="recap"><span>≣</span>Rekap Data</button>
     </nav>
     <div class="sidebar-bottom">
@@ -76,6 +77,36 @@
     <section id="view-commodity" class="view"><div class="section-heading"><div><h2>Analisis Komoditas</h2><p>Ringkasan komoditas berdasarkan filter aktif.</p></div><select id="commodityFocus" class="focus-select"></select></div><div class="kpi-grid four"><article class="kpi"><span>Rata-rata prev</span><strong id="commodityPrev">–</strong></article><article class="kpi"><span>Rata-rata current</span><strong id="commodityCurrent">–</strong></article><article class="kpi"><span>Perubahan</span><strong id="commodityChange">–</strong></article><article class="kpi"><span>Observasi</span><strong id="commodityObs">–</strong></article></div><article class="panel"><div class="chart-box tall"><canvas id="commodityRegionChart"></canvas></div></article></section>
 
     <section id="view-market" class="view"><div class="section-heading"><div><h2>Analisis Pasar</h2><p>Pasar dengan perubahan harga terbesar.</p></div></div><article class="panel"><div class="chart-box tall"><canvas id="marketRankingChart"></canvas></div></article></section>
+
+
+    <section id="view-trend" class="view">
+      <div class="section-heading">
+        <div><h2>Evaluasi Perubahan Antar Minggu</h2><p>Nilai 0 dan sel kosong diabaikan. Warna menunjukkan kelompok perubahan harga untuk setiap pasangan previous–current.</p></div>
+        <button id="trendRefreshBtn" class="btn secondary">↻ Sinkronkan Spreadsheet</button>
+      </div>
+      <div id="trendLegend" class="trend-legend"></div>
+      <div id="trendSummary" class="trend-summary"></div>
+      <article class="panel">
+        <div class="panel-head trend-toolbar">
+          <div><h3>Heatmap perubahan harga</h3><p>Mingguan: M1–M5; Dwi Mingguan: M1 dan M3; Bulanan: Previous–Current.</p></div>
+          <label>Kelompok perubahan
+            <select id="trendCategoryFilter" class="focus-select"><option value="">Semua kelompok</option></select>
+          </label>
+        </div>
+        <div class="table-wrap large trend-table-wrap">
+          <table id="trendTable" class="trend-table">
+            <thead><tr>
+              <th data-trend-sort="period">Periode</th><th data-trend-sort="kab">Wilayah</th><th data-trend-sort="commodity">Komoditas</th>
+              <th data-trend-sort="quality">Kualitas</th><th data-trend-sort="market">Pasar</th><th data-trend-sort="respondent">Nama Responden</th>
+              <th>Perubahan per minggu/periode</th><th data-trend-sort="maxAbsChange" class="num">Perubahan terbesar</th>
+              <th data-trend-sort="dominantCategory">Kelompok</th><th>Keterangan</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="trendTableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination"><button id="trendPrevPage" class="btn secondary">← Sebelumnya</button><span id="trendPageInfo">Halaman 1</span><button id="trendNextPage" class="btn secondary">Berikutnya →</button></div>
+      </article>
+    </section>
 
     <section id="view-evaluation" class="view"><div class="section-heading"><div><h2>Evaluasi Otomatis</h2><p>Prioritas pemeriksaan perubahan harga ekstrem.</p></div><span id="riskBadge" class="badge">–</span></div><div id="evaluationCards" class="evaluation-grid"></div><article class="panel"><div id="priorityList" class="priority-list"></div></article></section>
 

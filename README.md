@@ -92,3 +92,12 @@ Pemetaan penulisan:
 - Mingguan → kolom Y (25)
 - Dwi Mingguan → kolom S (19)
 - bulanan → kolom O (15)
+
+
+## Menu Evaluasi Antar Periode
+- Mingguan membandingkan M1–M5 Previous (L:P) dengan M1–M5 Current (Q:U).
+- Dwi Mingguan membandingkan M1 dan M3 Previous (L:M) dengan M1 dan M3 Current (N:O).
+- Bulanan membandingkan Previous (L) dengan Current (M).
+- Nilai 0 dan kosong tidak dihitung.
+- Keterangan tetap menggunakan Y (Mingguan), S (Dwi Mingguan), dan O (bulanan).
+- Gunakan tombol Sinkronkan Spreadsheet atau Muat ulang untuk menarik perubahan Keterangan yang dibuat langsung di Google Sheets.
