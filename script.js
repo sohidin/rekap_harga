@@ -1,6 +1,6 @@
 const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
-  appsScriptUrl:'PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI',
+  appsScriptUrl:'https://script.google.com/macros/s/XXXXXXXX/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25
 };
