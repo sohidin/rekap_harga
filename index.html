@@ -59,7 +59,7 @@
       <label>Komoditas<select id="commodityFilter"><option value="">Semua komoditas</option></select></label>
       <label>Jenis pasar<select id="marketTypeFilter"><option value="">Semua jenis pasar</option></select></label>
       <label class="search">Pencarian<input id="searchFilter" type="search" placeholder="Pasar, responden, kualitas, keterangan"></label>
-      <label class="check-filter"><input id="extremeOnly" type="checkbox" checked> Hanya perubahan ≤−20% atau ≥+20%</label>
+      <label class="check-filter"><input id="extremeOnly" type="checkbox"> Hanya perubahan ≤−20% atau ≥+20% <span class="filter-hint">(bawaan: tampilkan semua)</span></label>
     </section>
 
     <section id="view-dashboard" class="view active-view">
@@ -72,7 +72,7 @@
     <section id="view-period" class="view">
       <div class="section-heading"><div><h2>Evaluasi Bulanan</h2><p>Pilih Mingguan, Dwi Mingguan, Bulanan, atau gabungan seluruh periode.</p></div><span id="periodBadge" class="badge">Mingguan</span></div>
       <div class="kpi-grid four"><article class="kpi"><span>Komoditas</span><strong id="periodCommodities">–</strong></article><article class="kpi"><span>Pasar</span><strong id="periodMarkets">–</strong></article><article class="kpi"><span>Responden</span><strong id="periodRespondents">–</strong></article><article class="kpi warning"><span>Perubahan ekstrem</span><strong id="periodExtreme">–</strong></article></div>
-      <article class="panel"><div class="panel-head"><div><h3>Data perubahan harga</h3><p>Klik judul kolom untuk mengurutkan. Keterangan dapat diedit dan disimpan ke spreadsheet.</p></div></div><div class="table-wrap large"><table id="periodTable"><thead><tr><th data-sort="period">Periode</th><th data-sort="kab">Wilayah</th><th data-sort="commodity">Komoditas</th><th data-sort="quality">Kualitas</th><th data-sort="market">Pasar</th><th data-sort="respondent">Nama Responden</th><th data-sort="prev" class="num">Prev</th><th data-sort="current" class="num">Current</th><th data-sort="change" class="num">Perubahan</th><th data-sort="note">Keterangan</th><th>Aksi</th></tr></thead><tbody id="periodTableBody"></tbody></table></div><div class="pagination"><button id="periodPrevPage" class="btn secondary">← Sebelumnya</button><span id="periodPageInfo">Halaman 1</span><button id="periodNextPage" class="btn secondary">Berikutnya →</button></div></article>
+      <article class="panel"><div class="panel-head period-toolbar"><div><h3>Data perubahan harga</h3><p>Harga sebelumnya menjadi dasar berwarna putih; harga saat ini diberi gradasi sesuai besarnya perubahan.</p></div><label>Jumlah baris<select id="periodPageSize" class="page-size-select"><option value="50">50 baris</option><option value="100">100 baris</option><option value="250">250 baris</option><option value="500">500 baris</option><option value="all">Semua</option></select></label></div><div id="periodLegend" class="trend-legend compact-legend"></div><div class="table-wrap large"><table id="periodTable"><thead><tr><th data-sort="period">Periode</th><th data-sort="kab">Wilayah</th><th data-sort="commodity">Komoditas</th><th data-sort="quality">Kualitas</th><th data-sort="market">Pasar</th><th data-sort="respondent">Nama Responden</th><th data-sort="prev" class="num">Prev</th><th data-sort="current" class="num">Current</th><th data-sort="change" class="num">Perubahan</th><th data-sort="note">Keterangan</th><th>Aksi</th></tr></thead><tbody id="periodTableBody"></tbody></table></div><div class="pagination"><button id="periodPrevPage" class="btn secondary">← Sebelumnya</button><span id="periodPageInfo">Halaman 1</span><button id="periodNextPage" class="btn secondary">Berikutnya →</button></div></article>
     </section>
 
     <section id="view-commodity" class="view"><div class="section-heading"><div><h2>Analisis Komoditas</h2><p>Ringkasan komoditas berdasarkan filter aktif.</p></div><select id="commodityFocus" class="focus-select"></select></div><div class="kpi-grid four"><article class="kpi"><span>Rata-rata prev</span><strong id="commodityPrev">–</strong></article><article class="kpi"><span>Rata-rata current</span><strong id="commodityCurrent">–</strong></article><article class="kpi"><span>Perubahan</span><strong id="commodityChange">–</strong></article><article class="kpi"><span>Observasi</span><strong id="commodityObs">–</strong></article></div><article class="panel"><div class="chart-box tall"><canvas id="commodityRegionChart"></canvas></div></article></section>
@@ -89,10 +89,8 @@
       <div id="trendSummary" class="trend-summary"></div>
       <article class="panel">
         <div class="panel-head trend-toolbar">
-          <div><h3>Timeline dan grafik harga</h3><p>Angka harga ditampilkan sebagai informasi utama. Garis mini memperlihatkan pola, sedangkan persentase kecil menandai titik kenaikan atau penurunan.</p></div>
-          <label>Kelompok perubahan
-            <select id="trendCategoryFilter" class="focus-select"><option value="">Semua kelompok</option></select>
-          </label>
+          <div><h3>Timeline dan grafik harga</h3><p>Angka harga ditampilkan sebagai informasi utama. Garis mini memperlihatkan pola. Persentase perubahan ditampilkan lebih jelas di dalam kotak harga, sedangkan panah hanya menunjukkan arah perjalanan waktu.</p></div>
+          <div class="trend-toolbar-controls"><label>Kelompok perubahan<select id="trendCategoryFilter" class="focus-select"><option value="">Semua kelompok</option></select></label><label>Jumlah baris<select id="trendPageSize" class="page-size-select"><option value="50">50 baris</option><option value="100">100 baris</option><option value="250">250 baris</option><option value="500">500 baris</option><option value="all">Semua</option></select></label></div>
         </div>
         <div class="table-wrap large trend-table-wrap">
           <table id="trendTable" class="trend-table">

@@ -109,3 +109,10 @@ Pemetaan penulisan:
 - Dwi Mingguan: Prev M1 → Prev M3 → Current M1 → Current M3.
 - Bulanan: Previous → Current.
 - Nilai 0 dan sel kosong dilewati. Perubahan dihitung dari titik valid terakhir ke titik valid berikutnya.
+
+## Pembaruan tampilan evaluasi
+- Semua data ditampilkan secara bawaan; filter ±20% tetap tersedia sebagai opsi.
+- Evaluasi Bulanan dan Mingguan memiliki pilihan 50, 100, 250, 500 baris, atau Semua.
+- Harga dasar pertama pada timeline berwarna putih.
+- Persentase di atas panah dihapus; persentase hanya ditampilkan di dalam kotak harga.
+- Gradasi sembilan kelompok perubahan diperjelas untuk kenaikan dan penurunan.
