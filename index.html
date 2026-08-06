@@ -29,11 +29,12 @@
     <div class="brand"><div class="brand-logo">RH</div><div><strong>Monitoring Harga</strong><span>Rekap dan Evaluasi</span></div></div>
     <nav>
       <button class="nav-item active" data-view="dashboard"><span>⌂</span>Dashboard</button>
-      <button class="nav-item" data-view="period"><span>▦</span>Analisis Periode</button>
+      <div class="nav-label">EVALUASI HARGA</div>
+      <button class="nav-item" data-view="period"><span>▦</span>Evaluasi Bulanan</button>
+      <button class="nav-item" data-view="trend"><span>▥</span>Evaluasi Mingguan</button>
       <div class="nav-label">ANALISIS LANJUTAN</div>
       <button class="nav-item" data-view="commodity"><span>◈</span>Komoditas</button>
       <button class="nav-item" data-view="market"><span>⌖</span>Pasar</button>
-      <button class="nav-item" data-view="trend"><span>▥</span>Evaluasi Deret Harga</button>
       <button class="nav-item" data-view="evaluation"><span>⚑</span>Evaluasi Ringkas</button>
       <button class="nav-item" data-view="recap"><span>≣</span>Rekap Data</button>
     </nav>
@@ -69,7 +70,7 @@
     </section>
 
     <section id="view-period" class="view">
-      <div class="section-heading"><div><h2>Analisis Periode</h2><p>Pilih Mingguan, Dwi Mingguan, Bulanan, atau gabungan seluruh periode.</p></div><span id="periodBadge" class="badge">Mingguan</span></div>
+      <div class="section-heading"><div><h2>Evaluasi Bulanan</h2><p>Pilih Mingguan, Dwi Mingguan, Bulanan, atau gabungan seluruh periode.</p></div><span id="periodBadge" class="badge">Mingguan</span></div>
       <div class="kpi-grid four"><article class="kpi"><span>Komoditas</span><strong id="periodCommodities">–</strong></article><article class="kpi"><span>Pasar</span><strong id="periodMarkets">–</strong></article><article class="kpi"><span>Responden</span><strong id="periodRespondents">–</strong></article><article class="kpi warning"><span>Perubahan ekstrem</span><strong id="periodExtreme">–</strong></article></div>
       <article class="panel"><div class="panel-head"><div><h3>Data perubahan harga</h3><p>Klik judul kolom untuk mengurutkan. Keterangan dapat diedit dan disimpan ke spreadsheet.</p></div></div><div class="table-wrap large"><table id="periodTable"><thead><tr><th data-sort="period">Periode</th><th data-sort="kab">Wilayah</th><th data-sort="commodity">Komoditas</th><th data-sort="quality">Kualitas</th><th data-sort="market">Pasar</th><th data-sort="respondent">Nama Responden</th><th data-sort="prev" class="num">Prev</th><th data-sort="current" class="num">Current</th><th data-sort="change" class="num">Perubahan</th><th data-sort="note">Keterangan</th><th>Aksi</th></tr></thead><tbody id="periodTableBody"></tbody></table></div><div class="pagination"><button id="periodPrevPage" class="btn secondary">← Sebelumnya</button><span id="periodPageInfo">Halaman 1</span><button id="periodNextPage" class="btn secondary">Berikutnya →</button></div></article>
     </section>
@@ -81,14 +82,14 @@
 
     <section id="view-trend" class="view">
       <div class="section-heading">
-        <div><h2>Evaluasi Perubahan Antar Minggu</h2><p>Nilai 0 dan sel kosong diabaikan. Warna menunjukkan kelompok perubahan harga untuk setiap pasangan previous–current.</p></div>
+        <div><h2>Evaluasi Mingguan</h2><p>Harga menjadi fokus utama. Nilai 0 dan sel kosong dilewati; panah kecil menunjukkan perubahan antar-titik harga yang berurutan.</p></div>
         <button id="trendRefreshBtn" class="btn secondary">↻ Sinkronkan Spreadsheet</button>
       </div>
       <div id="trendLegend" class="trend-legend"></div>
       <div id="trendSummary" class="trend-summary"></div>
       <article class="panel">
         <div class="panel-head trend-toolbar">
-          <div><h3>Heatmap deret perubahan harga</h3><p>Mingguan mengikuti Prev M1→M5 lalu Current M1→M5; Dwi Mingguan mengikuti Prev M1→M3 lalu Current M1→M3; Bulanan mengikuti Previous→Current. Nilai 0/kosong dilewati.</p></div>
+          <div><h3>Timeline dan grafik harga</h3><p>Angka harga ditampilkan sebagai informasi utama. Garis mini memperlihatkan pola, sedangkan persentase kecil menandai titik kenaikan atau penurunan.</p></div>
           <label>Kelompok perubahan
             <select id="trendCategoryFilter" class="focus-select"><option value="">Semua kelompok</option></select>
           </label>
@@ -96,10 +97,9 @@
         <div class="table-wrap large trend-table-wrap">
           <table id="trendTable" class="trend-table">
             <thead><tr>
-              <th data-trend-sort="period">Periode</th><th data-trend-sort="kab">Wilayah</th><th data-trend-sort="commodity">Komoditas</th>
-              <th data-trend-sort="quality">Kualitas</th><th data-trend-sort="market">Pasar</th><th data-trend-sort="respondent">Nama Responden</th>
-              <th>Perubahan per minggu/periode</th><th data-trend-sort="maxAbsChange" class="num">Perubahan terbesar</th>
-              <th data-trend-sort="dominantCategory">Kelompok</th><th>Keterangan</th><th>Aksi</th>
+              <th data-trend-sort="period">Periode</th><th data-trend-sort="kab">Wilayah</th>
+              <th data-trend-sort="commodity">Komoditas / Kualitas</th><th data-trend-sort="market">Pasar / Responden</th>
+              <th>Perjalanan harga</th><th data-trend-sort="maxAbsChange">Ringkasan tren</th><th>Keterangan</th><th>Aksi</th>
             </tr></thead>
             <tbody id="trendTableBody"></tbody>
           </table>

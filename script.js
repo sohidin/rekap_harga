@@ -50,12 +50,12 @@ function classifyChange(c){
   if(c>0){if(a<20)return CHANGE_CATEGORIES[1];if(a<50)return CHANGE_CATEGORIES[2];if(a<100)return CHANGE_CATEGORIES[3];return CHANGE_CATEGORIES[4]}
   if(a<20)return CHANGE_CATEGORIES[5];if(a<50)return CHANGE_CATEGORIES[6];if(a<100)return CHANGE_CATEGORIES[7];return CHANGE_CATEGORIES[8];
 }
-function buildSeries(row,cfg){
-  // Membentuk deret waktu berkelanjutan. Nilai 0/kosong dilewati, sehingga
-  // perubahan dihitung dari titik valid terakhir ke titik valid berikutnya.
+function buildTimeline(row,cfg){
+  // Deret waktu berkelanjutan. Nilai 0/kosong dilewati, sehingga perubahan
+  // selalu dihitung dari harga valid terakhir ke harga valid berikutnya.
   const points=cfg.timeline.map(p=>({label:p.label,value:priceNum(row[p.index])}))
     .filter(p=>Number.isFinite(p.value)&&p.value>0);
-  return points.slice(1).map((to,i)=>{
+  const series=points.slice(1).map((to,i)=>{
     const from=points[i];
     const change=((to.value-from.value)/from.value)*100;
     return{
@@ -65,6 +65,7 @@ function buildSeries(row,cfg){
       category:classifyChange(change)
     };
   });
+  return {points,series};
 }
 
 function showStatus(msg,type='info'){const el=$('status');el.textContent=msg;el.className=`alert ${type}`;setTimeout(()=>el.classList.add('hidden'),5000)}
@@ -74,7 +75,7 @@ function csvUrl(sheet,cfg){return `https://docs.google.com/spreadsheets/d/${CONF
 async function fetchSheet(sheet,cfg){const res=await fetch(csvUrl(sheet,cfg),{cache:'no-store'});if(!res.ok)throw new Error(`Gagal membaca sheet ${sheet}`);const text=await res.text();const parsed=Papa.parse(text,{skipEmptyLines:true}).data;if(parsed.length<2)return[];return parsed.slice(1).map((r,i)=>{
   const prev=priceNum(r[cfg.prevIndex]),current=priceNum(r[cfg.currentIndex]);
   const change=prev&&current!=null?((current-prev)/prev)*100:null;
-  const series=buildSeries(r,cfg),validSeries=series.filter(s=>s.valid),largest=validSeries.slice().sort((a,b)=>Math.abs(b.change)-Math.abs(a.change))[0]||null;return{sheet,period:periodLabel(sheet),rowNumber:i+3,kab:norm(r[0]),commodity:norm(r[2]),quality:norm(r[5]),marketType:norm(r[7]),market:norm(r[9]),respondent:norm(r[cfg.respondentIndex]),prev,current,change,note:norm(r[cfg.noteIndex]),noteColumn:cfg.noteColumn,series,maxAbsChange:largest?Math.abs(largest.change):null,dominantCategory:largest?.category?.label||'Tidak dapat dihitung',dominantCategoryId:largest?.category?.id||''};
+  const timeline=buildTimeline(r,cfg),series=timeline.series,validSeries=series.filter(s=>s.valid),largest=validSeries.slice().sort((a,b)=>Math.abs(b.change)-Math.abs(a.change))[0]||null;return{sheet,period:periodLabel(sheet),rowNumber:i+3,kab:norm(r[0]),commodity:norm(r[2]),quality:norm(r[5]),marketType:norm(r[7]),market:norm(r[9]),respondent:norm(r[cfg.respondentIndex]),prev,current,change,note:norm(r[cfg.noteIndex]),noteColumn:cfg.noteColumn,timelinePoints:timeline.points,series,maxAbsChange:largest?Math.abs(largest.change):null,dominantCategory:largest?.category?.label||'Tidak dapat dihitung',dominantCategoryId:largest?.category?.id||''};
   }).filter(x=>x.commodity||x.respondent||x.prev!=null||x.current!=null);
 }
 async function loadAll(){showStatus('Memuat data dari tiga sheet...');try{const entries=Object.entries(SHEETS);const groups=await Promise.all(entries.map(([s,c])=>fetchSheet(s,c)));state.all=groups.flat();state.page=1;state.periodPage=1;state.trendPage=1;populateFilters();applyFilters();$('lastUpdate').textContent=`Diperbarui ${new Date().toLocaleString('id-ID')}`;showStatus(`${fmtInt(state.all.length)} observasi berhasil dimuat.`)}catch(e){showStatus(`${e.message}. Pastikan spreadsheet dapat diakses oleh siapa saja yang memiliki link.`,'error')}}
@@ -152,10 +153,45 @@ function trendBaseData(){
   return state.all.filter(x=>(p==='Semua'||x.sheet===p)&&(!kab||x.kab===kab)&&(!kom||x.commodity===kom)&&(!mt||x.marketType===mt)&&(!q||[x.kab,x.commodity,x.quality,x.market,x.respondent,x.note,x.period].join(' ').toLowerCase().includes(q))&&x.series.some(s=>s.valid)&&(!cat||x.series.some(s=>s.valid&&s.category?.id===cat)));
 }
 function sortedTrendData(){const arr=trendBaseData(),k=state.trendSortKey,d=state.trendSortDir==='asc'?1:-1;return arr.sort((a,b)=>{let av=a[k],bv=b[k];if(typeof av==='number'||typeof bv==='number'){av=Number.isFinite(av)?av:-Infinity;bv=Number.isFinite(bv)?bv:-Infinity;return(av-bv)*d}return String(av??'').localeCompare(String(bv??''),'id')*d})}
-function weekCellHtml(s){return `<div class="week-cell ${s.category.className}"><div class="week-name">${esc(s.fromLabel)} → ${esc(s.toLabel)}</div><div class="price-flow">${fmtMoney(s.prev)}<br>→ ${fmtMoney(s.current)}</div><div class="week-change">${fmtPct(s.change)}</div></div>`}
-function trendRowHtml(x){const largest=x.series.filter(s=>s.valid).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change))[0],cat=largest?.category||CHANGE_CATEGORIES[0];return `<tr class="trend-row ${cat.className}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td><td>${esc(x.commodity)}</td><td>${esc(x.quality)}</td><td>${esc(x.market)}</td><td>${esc(x.respondent)}</td><td><div class="week-cells">${x.series.map(weekCellHtml).join('')}</div></td><td class="num"><strong>${largest?fmtPct(largest.change):'–'}</strong></td><td><span class="category-badge ${cat.className}">${esc(largest?.category?.label||'Tidak dapat dihitung')}</span></td><td>${noteCell(x)}</td><td>${saveButton(x)}</td></tr>`}
+function compactMoney(v){
+  if(!Number.isFinite(v))return '–';
+  return new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(v);
+}
+function sparklineSvg(points){
+  if(!points||points.length<2)return '<div class="spark-empty">Data belum cukup untuk grafik</div>';
+  const values=points.map(p=>p.value),min=Math.min(...values),max=Math.max(...values),range=max-min||1;
+  const w=520,h=66,padX=10,padY=9;
+  const xy=values.map((v,i)=>({x:padX+i*((w-padX*2)/(values.length-1)),y:padY+(max-v)/range*(h-padY*2)}));
+  const line=xy.map((p,i)=>`${i?'L':'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const area=`${line} L ${xy[xy.length-1].x.toFixed(1)} ${h-padY} L ${xy[0].x.toFixed(1)} ${h-padY} Z`;
+  const dots=xy.map((p,i)=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2"><title>${esc(points[i].label)}: ${fmtMoney(points[i].value)}</title></circle>`).join('');
+  return `<svg class="price-sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Grafik tren harga"><path class="spark-area" d="${area}"></path><path class="spark-line" d="${line}"></path>${dots}</svg>`;
+}
+function movementClass(c){return !Number.isFinite(c)||Math.abs(c)<.005?'stable':c>0?'up':'down'}
+function priceTimelineHtml(x){
+  const points=x.timelinePoints||[],trans=x.series||[];
+  if(!points.length)return '<div class="timeline-empty">Tidak ada harga valid.</div>';
+  let html=`<div class="price-visual"><div class="spark-wrap">${sparklineSvg(points)}</div><div class="price-timeline">`;
+  points.forEach((p,i)=>{
+    const t=i?trans[i-1]:null,cls=t?movementClass(t.change):'start';
+    if(i){html+=`<div class="price-connector ${cls}"><span>${Math.abs(t.change)<.005?'0%':fmtPct(t.change)}</span><i>→</i></div>`}
+    html+=`<div class="price-node ${cls}"><span class="point-label">${esc(p.label)}</span><strong>Rp ${compactMoney(p.value)}</strong>${t&&Math.abs(t.change)>=.005?`<small>${t.change>0?'▲':'▼'} ${fmtPct(t.change)}</small>`:'<small>Harga tetap</small>'}</div>`;
+  });
+  return html+'</div></div>';
+}
+function trendStatsHtml(x){
+  const s=(x.series||[]).filter(v=>v.valid),p=x.timelinePoints||[];
+  const up=s.filter(v=>v.change>.005).length,down=s.filter(v=>v.change<-.005).length,stable=s.length-up-down;
+  const first=p[0]?.value,last=p[p.length-1]?.value,total=first&&last?((last-first)/first)*100:null;
+  const largest=s.slice().sort((a,b)=>Math.abs(b.change)-Math.abs(a.change))[0];
+  return `<div class="trend-stats"><div class="trend-total ${movementClass(total)}"><span>Awal → terakhir</span><strong>${Number.isFinite(total)?fmtPct(total):'–'}</strong><small>${fmtMoney(first)} → ${fmtMoney(last)}</small></div><div class="movement-counts"><span class="up">▲ ${up} naik</span><span class="down">▼ ${down} turun</span><span class="stable">— ${stable} tetap</span></div>${largest?`<div class="largest-move"><span>Perubahan terbesar</span><strong class="${movementClass(largest.change)}">${fmtPct(largest.change)}</strong><small>${esc(largest.fromLabel)} → ${esc(largest.toLabel)}</small></div>`:''}</div>`;
+}
+function trendRowHtml(x){
+  const largest=x.series.filter(s=>s.valid).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change))[0],cat=largest?.category||CHANGE_CATEGORIES[0];
+  return `<tr class="trend-row ${cat.className}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td><td><strong>${esc(x.commodity)}</strong><small class="cell-sub">${esc(x.quality)}</small></td><td>${esc(x.market)}<small class="cell-sub">${esc(x.respondent)}</small></td><td>${priceTimelineHtml(x)}</td><td>${trendStatsHtml(x)}</td><td>${noteCell(x)}</td><td>${saveButton(x)}</td></tr>`;
+}
 function renderTrendLegend(){if(!$('trendLegend'))return;$('trendLegend').innerHTML=CHANGE_CATEGORIES.map(c=>`<span class="legend-chip ${c.className}"><i class="legend-dot" style="background:var(--cat-color)"></i>${esc(c.label)}</span>`).join('');const sel=$('trendCategoryFilter');if(sel&&sel.options.length===1)sel.innerHTML='<option value="">Semua kelompok</option>'+CHANGE_CATEGORIES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('')}
-function renderTrend(){if(!$('trendTableBody'))return;renderTrendLegend();const d=sortedTrendData(),counts=Object.fromEntries(CHANGE_CATEGORIES.map(c=>[c.id,0]));d.forEach(x=>x.series.forEach(s=>{if(s.valid&&s.category)counts[s.category.id]++}));$('trendSummary').innerHTML=CHANGE_CATEGORIES.map(c=>`<article class="trend-summary-card ${c.className}"><span>${esc(c.label)}</span><strong>${fmtInt(counts[c.id])}</strong></article>`).join('');const p=paginate(d,state.trendPage);state.trendPage=p.page;$('trendTableBody').innerHTML=p.rows.map(trendRowHtml).join('')||'<tr><td colspan="11">Tidak ada deret harga valid. Nilai 0 dan kosong dilewati.</td></tr>';$('trendPageInfo').textContent=`Halaman ${p.page} dari ${p.pages} • ${fmtInt(d.length)} baris • ${fmtInt(d.reduce((n,x)=>n+x.series.filter(s=>s.valid).length,0))} perubahan berurutan`;bindSaveButtons();updateTrendSortMarks()}
+function renderTrend(){if(!$('trendTableBody'))return;renderTrendLegend();const d=sortedTrendData(),counts=Object.fromEntries(CHANGE_CATEGORIES.map(c=>[c.id,0]));d.forEach(x=>x.series.forEach(s=>{if(s.valid&&s.category)counts[s.category.id]++}));$('trendSummary').innerHTML=CHANGE_CATEGORIES.map(c=>`<article class="trend-summary-card ${c.className}"><span>${esc(c.label)}</span><strong>${fmtInt(counts[c.id])}</strong></article>`).join('');const p=paginate(d,state.trendPage);state.trendPage=p.page;$('trendTableBody').innerHTML=p.rows.map(trendRowHtml).join('')||'<tr><td colspan="8">Tidak ada deret harga valid. Nilai 0 dan kosong dilewati.</td></tr>';$('trendPageInfo').textContent=`Halaman ${p.page} dari ${p.pages} • ${fmtInt(d.length)} baris • ${fmtInt(d.reduce((n,x)=>n+x.series.filter(s=>s.valid).length,0))} perubahan berurutan`;bindSaveButtons();updateTrendSortMarks()}
 function updateTrendSortMarks(){document.querySelectorAll('th[data-trend-sort]').forEach(th=>{th.querySelector('.sort-mark')?.remove();if(th.dataset.trendSort===state.trendSortKey)th.insertAdjacentHTML('beforeend',`<span class="sort-mark">${state.trendSortDir==='asc'?'▲':'▼'}</span>`)})}
 function bindTrendSort(){document.querySelectorAll('th[data-trend-sort]').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.trendSort;if(state.trendSortKey===k)state.trendSortDir=state.trendSortDir==='asc'?'desc':'asc';else{state.trendSortKey=k;state.trendSortDir=k==='maxAbsChange'?'desc':'asc'}state.trendPage=1;renderTrend()}))}
 
@@ -163,6 +199,6 @@ function renderEvaluation(){const d=state.filtered,ext=d.filter(x=>Math.abs(x.ch
 function updateSortMarks(){document.querySelectorAll('th[data-sort]').forEach(th=>{th.querySelector('.sort-mark')?.remove();if(th.dataset.sort===state.sortKey)th.insertAdjacentHTML('beforeend',`<span class="sort-mark">${state.sortDir==='asc'?'▲':'▼'}</span>`)})}
 function bindSort(){document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.sort;if(state.sortKey===k)state.sortDir=state.sortDir==='asc'?'desc':'asc';else{state.sortKey=k;state.sortDir=k==='change'?'desc':'asc'}renderPeriod();renderRecap();updateSortMarks()}))}
 function downloadCsv(){const rows=sortedData(),headers=['Periode','Wilayah','Komoditas','Kualitas','Jenis Pasar','Pasar','Nama Responden','Prev','Current','Perubahan (%)','Keterangan'];const csv=Papa.unparse([headers,...rows.map(x=>[x.period,x.kab,x.commodity,x.quality,x.marketType,x.market,x.respondent,x.prev,x.current,x.change,x.note])]);const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rekap-monitoring-harga.csv';a.click();URL.revokeObjectURL(a.href)}
-function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Analisis Periode','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas','Perbandingan komoditas terpilih.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Antar Periode','Deret perubahan harga berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],recap:['Rekap Data','Tabel data yang dapat diurutkan dan diedit.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
+function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Evaluasi Bulanan','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas','Perbandingan komoditas terpilih.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Mingguan','Deret perubahan harga mingguan secara berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],recap:['Rekap Data','Tabel data yang dapat diurutkan dan diedit.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
 function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','commodityFilter','marketTypeFilter','extremeOnly'].forEach(id=>$(id).addEventListener('change',applyFilters));$('searchFilter').addEventListener('input',applyFilters);$('commodityFocus').addEventListener('change',renderCommodity);$('prevPage').onclick=()=>{if(state.page>1){state.page--;renderRecap()}};$('nextPage').onclick=()=>{state.page++;renderRecap()};$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('downloadBtn').onclick=downloadCsv;$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendRefreshBtn').onclick=loadAll;bindSort();bindTrendSort();if(logged)loadAll()}
 document.addEventListener('DOMContentLoaded',init);

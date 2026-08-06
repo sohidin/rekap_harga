@@ -12,7 +12,7 @@ Perubahan dihitung oleh dashboard dengan rumus `(Current - Prev) / Prev × 100%`
 
 ## Fitur revisi
 
-- Menu Mingguan, Dwi Mingguan, dan Bulanan digabung menjadi **Analisis Periode**.
+- Menu Mingguan, Dwi Mingguan, dan Bulanan digabung menjadi **Evaluasi Bulanan**.
 - Pilihan periode: Mingguan, Dwi Mingguan, Bulanan, dan **Tampilkan Semua**.
 - Kolom **Nama Responden** dari kolom K.
 - Kolom **Keterangan** dapat diedit.
@@ -94,7 +94,7 @@ Pemetaan penulisan:
 - bulanan → kolom O (15)
 
 
-## Menu Evaluasi Antar Periode
+## Menu Evaluasi Mingguan
 - Mingguan membandingkan M1–M5 Previous (L:P) dengan M1–M5 Current (Q:U).
 - Dwi Mingguan membandingkan M1 dan M3 Previous (L:M) dengan M1 dan M3 Current (N:O).
 - Bulanan membandingkan Previous (L) dengan Current (M).
