@@ -116,3 +116,10 @@ Pemetaan penulisan:
 - Harga dasar pertama pada timeline berwarna putih.
 - Persentase di atas panah dihapus; persentase hanya ditampilkan di dalam kotak harga.
 - Gradasi sembilan kelompok perubahan diperjelas untuk kenaikan dan penurunan.
+
+## Pembaruan filter dan urutan data
+
+- Evaluasi Bulanan memiliki filter **Kelompok perubahan** untuk sembilan kategori warna.
+- Evaluasi Bulanan dan Evaluasi Mingguan memiliki tombol **Urutan Raw Data**.
+- Tombol tersebut mengurutkan kembali data menurut urutan sheet sumber dan nomor baris asli pada spreadsheet.
+- Saat periode `Tampilkan Semua` dipilih, urutan sheet adalah Mingguan, Dwi Mingguan, lalu Bulanan; di dalam setiap sheet urutan mengikuti nomor baris asli.
