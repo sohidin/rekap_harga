@@ -85,12 +85,19 @@ function populateDatalist(inputId,listId,items){const input=$(inputId),list=$(li
 function qualityOptionsForCommodity(){const kom=norm($('commodityFilter')?.value).toLowerCase();const rows=!kom?state.all:state.all.filter(x=>x.commodity.toLowerCase().includes(kom)||x.commodityCode.toLowerCase().includes(kom));return unique(rows,'quality')}
 function updateQualityDatalist(){populateDatalist('qualityFilter','qualityFilterList',qualityOptionsForCommodity())}
 function populateFilters(){populateSelect('kabFilter',unique(state.all,'kab'),'Semua wilayah');populateDatalist('commodityFilter','commodityFilterList',unique(state.all,'commodity'));updateQualityDatalist();populateSelect('marketTypeFilter',unique(state.all,'marketType'),'Semua jenis pasar')}
-function selectedChangeBands(){return [...document.querySelectorAll('.change-band-check:checked')].map(el=>Number(el.value)).filter(Number.isFinite)}
+function selectedChangeBands(){return [...document.querySelectorAll('.change-band-check:checked')].map(el=>String(el.value))}
 function changeMatchesBands(change,bands=selectedChangeBands()){
   if(!bands.length)return true;
   if(!Number.isFinite(change))return false;
   const a=Math.abs(change);
-  return bands.some(b=>b===20?(a>=20&&a<50):b===50?(a>=50&&a<100):b===100?a>=100:false);
+  const isStable=a<0.005;
+  return bands.some(b=>
+    b==='stable'?isStable:
+    b==='small'?(a>=0.005&&a<20):
+    b==='20'?(a>=20&&a<50):
+    b==='50'?(a>=50&&a<100):
+    b==='100'?a>=100:false
+  );
 }
 function applyFilters(){const p=currentPeriod(),kab=$('kabFilter').value,kom=norm($('commodityFilter').value).toLowerCase(),qual=norm($('qualityFilter').value).toLowerCase(),mt=$('marketTypeFilter').value,q=norm($('searchFilter').value).toLowerCase(),bands=selectedChangeBands();state.filtered=state.all.filter(x=>(p==='Semua'||x.sheet===p)&&(!kab||x.kab===kab)&&(!kom||x.commodity.toLowerCase().includes(kom)||x.commodityCode.toLowerCase().includes(kom))&&(!qual||x.quality.toLowerCase().includes(qual))&&(!mt||x.marketType===mt)&&(!q||[x.kab,x.commodityCode,x.commodity,x.quality,x.market,x.respondent,x.note,x.period].join(' ').toLowerCase().includes(q))&&changeMatchesBands(x.change,bands));state.periodPage=1;state.trendPage=1;renderAll()}
 function statusOf(c){if(!Number.isFinite(c)||Math.abs(c)<0.005)return 'Tetap';return c>0?'Naik':'Turun'}

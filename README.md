@@ -147,4 +147,4 @@ Evaluasi Bulanan menampilkan sembilan kartu distribusi kelompok perubahan (tetap
 
 
 ## Filter besar perubahan (multi-select)
-Evaluasi Bulanan dan Evaluasi Mingguan memiliki filter besar perubahan yang dapat dipilih lebih dari satu: ±20–49,99%, ±50–99,99%, dan ±100% atau lebih. Jika tidak ada pilihan, semua data ditampilkan. Pada Evaluasi Mingguan, sebuah baris lolos jika minimal satu perubahan berurutan masuk ke kelompok yang dipilih.
+Evaluasi Bulanan dan Evaluasi Mingguan memiliki filter besar perubahan yang dapat dipilih lebih dari satu: Tidak ada perubahan harga, >0–19,99%, ±20–49,99%, ±50–99,99%, dan ±100% atau lebih. Jika tidak ada pilihan, semua data ditampilkan. Pada Evaluasi Mingguan, sebuah baris lolos jika minimal satu perubahan berurutan masuk ke kelompok yang dipilih.
