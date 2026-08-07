@@ -195,3 +195,9 @@ Versi ini mengubah penyimpanan Keterangan menjadi request JSONP yang menunggu ko
 Versi ini tidak lagi hanya mengandalkan nomor baris dari CSV. Untuk sheet `RH web`, saat tombol Simpan ditekan browser mengirim nomor baris sekaligus identitas `Wilayah (A) + Kode Komoditas (C) + Komoditas (D)`. Apps Script memvalidasi baris tersebut dan, bila nomor baris meleset, mencari baris yang benar sebelum menulis `Keterangan` ke kolom H. Mengosongkan textarea lalu klik Simpan juga diperlakukan sebagai update yang sah dan akan menjalankan `clearContent()` pada sel H.
 
 Karena `Code.gs` berubah, lakukan deploy ulang sebagai **New version** pada deployment Web App yang sama. Setelah itu upload `script.js` terbaru ke GitHub dan pastikan `CONFIG.appsScriptUrl` tetap berisi URL `/exec` Anda.
+
+
+## Pembaruan pencarian dropdown dan klasifikasi RH
+- Komoditas/Kualitas pada menu non-RH kini memakai searchable dropdown kustom: klik field atau tombol panah untuk menampilkan seluruh pilihan meskipun nilai sebelumnya masih terisi.
+- Komoditas pada Tabulasi RH/Harga RH memakai mekanisme yang sama.
+- Filter RH memakai interval nilai RH: =100, >100–110, >110–120, >120–130, >130–140, >140, 90–<100, 80–<90, 70–<80, 60–<70, dan <60.

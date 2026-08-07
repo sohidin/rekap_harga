@@ -114,3 +114,18 @@
 .rh-value-down-0{background:linear-gradient(135deg,#fff8f5,#ffe1d8);border-color:#f4b7a6;color:#a14a34}.rh-value-down-20{background:linear-gradient(135deg,#fff0ea,#ffc8bb);border-color:#ef927d;color:#9b341f}.rh-value-down-50{background:linear-gradient(135deg,#ffe5df,#fca699);border-color:#e86f5d;color:#8d2619}.rh-value-down-100{background:linear-gradient(135deg,#ffd7d4,#ef7f7f);border-color:#d74c53;color:#791d25}
 .pagination .btn:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:980px){.rh-filters{grid-template-columns:1fr 1fr}.rh-class-filter{grid-column:1/-1}}
+
+
+/* Searchable dropdown: tetap dapat dibuka saat nilai sudah terpilih */
+.searchable-combo{position:relative;min-width:0}
+.searchable-combo input{padding-right:42px!important}
+.combo-toggle{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;border-radius:7px;background:transparent;color:#5f7187;font-size:18px;cursor:pointer;z-index:3}
+.combo-toggle:hover{background:#eef4fb;color:#1769e0}
+.combo-menu{display:none;position:absolute;z-index:1500;top:calc(100% + 5px);left:0;right:0;max-height:310px;overflow:auto;background:#fff;border:1px solid #d7e1ed;border-radius:10px;box-shadow:0 14px 34px rgba(24,48,77,.18);padding:5px}
+.combo-menu.open{display:block}
+.combo-option{display:block;width:100%;border:0;background:#fff;text-align:left;padding:9px 10px;border-radius:7px;font:inherit;font-size:12px;color:#233448;cursor:pointer;white-space:normal;line-height:1.35}
+.combo-option:hover,.combo-option.selected{background:#eaf3ff;color:#0f5ec9}
+.combo-option.selected{font-weight:700}
+.combo-clear{color:#6d7f93;border-bottom:1px solid #edf1f5;border-radius:7px 7px 0 0;margin-bottom:3px}
+.combo-empty{padding:12px;color:#7a8ca2;font-size:12px}
+.rh-filter-chips{row-gap:7px}
