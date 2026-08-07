@@ -179,3 +179,10 @@ Karena Keterangan RH ditulis ke kolom H, **Code.gs berubah**. Tempel Code.gs ter
 - Jika Keterangan diubah dari web lalu tombol **Simpan** ditekan, Apps Script menulis ke baris yang sama pada kolom H dan web membaca kembali data RH sesudah penyimpanan.
 - Pada Tabulasi RH, setiap kabupaten/kota mempunyai textarea dan tombol Simpan sendiri. Tombol sekarang selalu membaca textarea pada kotak kabupaten/kota yang sama, sehingga catatan 1902/1903/1906/1971 tidak tertukar.
 - Saat pengguna sedang mengetik di textarea RH, sinkronisasi otomatis tidak akan merender ulang tabel agar teks yang sedang diketik tidak hilang.
+
+
+## Sinkronisasi RH cepat (versi terbaru)
+
+Versi ini mengubah sinkronisasi Keterangan pada sheet **RH web** agar terasa seperti Evaluasi Bulanan/Mingguan. Simpan dari web dikirim melalui form POST langsung ke Apps Script dan state Tabulasi RH + Harga RH diperbarui saat itu juga. Perubahan yang diketik langsung di spreadsheet dibaca melalui endpoint Apps Script ringan setiap sekitar **2 detik**, sehingga tidak menunggu refresh CSV seluruh sheet.
+
+Karena `Code.gs` berubah, lakukan **Deploy > Manage deployments > Edit > New version > Deploy**. Pertahankan URL `/exec` deployment yang sama, lalu masukkan URL itu kembali ke `CONFIG.appsScriptUrl` pada `script.js`.

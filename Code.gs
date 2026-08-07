@@ -1,28 +1,45 @@
 const SPREADSHEET_ID = '1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg';
 const WRITE_TOKEN = 'harga1900';
 
-// Nama sheet harus sama persis dengan tab pada spreadsheet.
 const ALLOWED_SHEETS = {
-  'Mingguan': 25,      // Kolom Y
-  'Dwi Mingguan': 19,  // Kolom S
-  'bulanan': 15,       // Kolom O
-  'RH web': 8           // Kolom H
+  'Mingguan': 25,
+  'Dwi Mingguan': 19,
+  'bulanan': 15,
+  'RH web': 8
 };
 
 function doGet(e) {
-  return jsonOutput({
+  const p = (e && e.parameter) || {};
+  const action = String(p.action || '');
+
+  // Endpoint ringan khusus Keterangan RH. Dipakai web untuk sinkron hampir
+  // real-time tanpa membaca ulang seluruh sheet melalui CSV/gviz.
+  if (action === 'getRhNotes') {
+    try {
+      if (String(p.token || '') !== WRITE_TOKEN) throw new Error('Token tidak valid.');
+      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      const sh = ss.getSheetByName('RH web');
+      if (!sh) throw new Error('Sheet RH web tidak ditemukan.');
+      const lastRow = sh.getLastRow();
+      const values = lastRow >= 3 ? sh.getRange(3, 8, lastRow - 2, 1).getDisplayValues() : [];
+      const out = {ok:true, rows:values.map((r,i)=>({row:i+3,note:String(r[0] || '')})), serverTime:new Date().toISOString()};
+      return jsonOrJsonp(out, p.callback);
+    } catch (err) {
+      return jsonOrJsonp({ok:false,message:String(err && err.message ? err.message : err)}, p.callback);
+    }
+  }
+
+  return jsonOrJsonp({
     ok: true,
     message: 'Web App Monitoring Harga aktif',
     spreadsheetId: SPREADSHEET_ID
-  });
+  }, p.callback);
 }
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
-    lock.waitLock(30000);
-
-    // Mendukung POST form-urlencoded maupun JSON lama.
+    lock.waitLock(10000);
     let data = e && e.parameter ? e.parameter : {};
     if (e && e.postData && e.postData.contents &&
         String(e.postData.type || '').toLowerCase().includes('application/json')) {
@@ -37,12 +54,8 @@ function doPost(e) {
 
     if (token !== WRITE_TOKEN) throw new Error('Token tidak valid.');
     if (action !== 'updateNote') throw new Error('Aksi tidak dikenali.');
-    if (!Object.prototype.hasOwnProperty.call(ALLOWED_SHEETS, sheetName)) {
-      throw new Error('Sheet tidak diizinkan: ' + sheetName);
-    }
-    if (!Number.isInteger(row) || row < 3) {
-      throw new Error('Nomor baris tidak valid: ' + row);
-    }
+    if (!Object.prototype.hasOwnProperty.call(ALLOWED_SHEETS, sheetName)) throw new Error('Sheet tidak diizinkan: ' + sheetName);
+    if (!Number.isInteger(row) || row < 3) throw new Error('Nomor baris tidak valid: ' + row);
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName(sheetName);
@@ -53,23 +66,22 @@ function doPost(e) {
     sheet.getRange(row, column).setValue(note);
     SpreadsheetApp.flush();
 
-    return jsonOutput({
-      ok: true,
-      sheet: sheetName,
-      row: row,
-      column: column,
-      cell: sheet.getRange(row, column).getA1Notation(),
-      note: note
-    });
+    return jsonOutput({ok:true,sheet:sheetName,row:row,column:column,cell:sheet.getRange(row,column).getA1Notation(),note:note});
   } catch (err) {
-    return jsonOutput({ok: false, message: String(err && err.message ? err.message : err)});
+    return jsonOutput({ok:false,message:String(err && err.message ? err.message : err)});
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
 }
 
+function jsonOrJsonp(obj, callback) {
+  const cb = String(callback || '');
+  if (cb && /^[A-Za-z_$][0-9A-Za-z_$]*$/.test(cb)) {
+    return ContentService.createTextOutput(cb + '(' + JSON.stringify(obj) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return jsonOutput(obj);
+}
+
 function jsonOutput(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }

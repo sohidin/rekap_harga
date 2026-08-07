@@ -3,7 +3,7 @@ const CONFIG={
   appsScriptUrl:'https://script.google.com/macros/s/AKfycbwe2FvCpkYpEiXhWyMW2BXuqNB9TcJaNq9MqigpNk_UjKda8CA5VyGPnpnPmD0nBcrtWg/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25,
-  rhSyncIntervalMs:10000
+  rhSyncIntervalMs:2000
 };
 const SHEETS={
   'Mingguan':{
@@ -123,7 +123,7 @@ function categoryOfRow(x){return classifyChange(x.change)||CHANGE_CATEGORIES[0]}
 function periodLegendHtml(){return CHANGE_CATEGORIES.map(c=>`<span class="legend-chip ${c.className}"><i class="legend-dot" style="background:var(--cat-color)"></i>${esc(c.label)}</span>`).join('')}
 function rowHtml(x,recap=false){
   const cat=categoryOfRow(x), movement=movementClass(x.change);
-  return `<tr class="period-row ${cat.className} ${Math.abs(x.change||0)>=20?'extreme-row':''}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td>${recap?'':`<td><span class="commodity-code">${esc(x.commodityCode)}</span></td>`}<td><strong class="primary-cell-text">${esc(x.commodity)}</strong></td><td><span class="quality-text">${esc(x.quality)}</span></td>${recap?`<td>${esc(x.marketType)}</td>`:''}<td>${esc(x.market)}</td><td><span class="respondent-text">${esc(x.respondent)}</span></td><td class="num"><div class="period-price-card base-price"><span>Harga dasar</span><strong>${fmtMoney(x.prev)}</strong></div></td><td class="num"><div class="period-price-card current-price ${cat.className}"><span>Harga saat ini</span><strong>${fmtMoney(x.current)}</strong></div></td><td class="num"><span class="change-badge ${cat.className}"><b>${movement==='up'?'▲':movement==='down'?'▼':'—'}</b>${fmtPct(x.change)}<small>${esc(cat.label)}</small></span></td><td>${noteCell(x)}</td><td>${saveButton(x)}</td></tr>`
+  return `<tr class="period-row ${cat.className} ${Math.abs(x.change||0)>=20?'extreme-row':''}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td>${recap?'':`<td><span class="commodity-code">${esc(x.commodityCode)}</span></td>`}<td><strong class="primary-cell-text">${esc(x.commodity)}</strong></td><td><span class="quality-text">${esc(x.quality)}</span></td>${recap?`<td>${esc(x.marketType)}</td>`:''}<td>${esc(x.market)}</td><td><span class="respondent-text">${esc(x.respondent)}</span></td><td class="num"><div class="period-price-card base-price"><span>Harga dasar</span><strong>${fmtMoney(x.prev)}</strong></div></td><td class="num"><div class="period-price-card current-price ${cat.className}"><span>Harga saat ini</span><strong>${fmtMoney(x.current)}</strong></div></td><td class="num"><span class="change-badge ${cat.className}"><b>${movement==='up'?'▲':movement==='down'?'▼':'—'}</b>${fmtPct(x.change)}<small>${esc(cat.label)}</small></span></td><td><textarea class="editable-note rh-note" id="note-rhprice-${x.rowNumber}">${esc(x.note)}</textarea></td><td><button class="btn primary save-note" data-sheet="RH web" data-row="${x.rowNumber}" data-note-id="note-rhprice-${x.rowNumber}">Simpan</button></td></tr>`
 }
 function paginate(data,page,size=CONFIG.pageSize){if(size==='all')return{rows:data,pages:1,page:1};const n=Number(size)||CONFIG.pageSize,pages=Math.max(1,Math.ceil(data.length/n));page=Math.min(page,pages);return{rows:data.slice((page-1)*n,page*n),pages,page}}
 function periodBaseData(){
@@ -168,8 +168,6 @@ async function saveNote(btn){
   const sheet=btn.dataset.sheet;
   const row=Number(btn.dataset.row);
   const rowEl=btn.closest('tr');
-  // Prioritaskan textarea yang memang terkait dengan tombol ini. Ini penting
-  // pada Tabulasi RH karena satu baris dapat memiliki 4 kotak Keterangan.
   const noteEl=$(btn.dataset.noteId)||(btn.closest('details')&&btn.closest('details').querySelector('textarea.editable-note'))||(rowEl&&rowEl.querySelector('textarea.editable-note'));
   const note=noteEl ? noteEl.value : '';
 
@@ -178,32 +176,27 @@ async function saveNote(btn){
   btn.textContent='Menyimpan...';
 
   try{
-    // Form URL encoded adalah "simple request", sehingga lebih kompatibel
-    // antara GitHub Pages dan Google Apps Script Web App.
-    const body=new URLSearchParams({
-      action:'updateNote',
-      sheet:String(sheet),
-      row:String(row),
-      note:String(note),
-      token:'harga1900',
-      ts:String(Date.now())
-    });
-
-    await fetch(url,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-      body:body.toString(),
-      cache:'no-store'
+    // Submit form ke iframe tersembunyi. Browser mengizinkan POST lintas domain
+    // seperti form biasa, sehingga lebih konsisten untuk GitHub Pages -> Apps Script.
+    await postToAppsScript({
+      action:'updateNote', sheet:String(sheet), row:String(row), note:String(note),
+      token:'harga1900', ts:String(Date.now())
     });
 
     const item=state.all.find(x=>x.sheet===sheet&&x.rowNumber===row)||state.rhAll.find(x=>x.sheet===sheet&&x.rowNumber===row);
     if(item)item.note=note;
     if(noteEl)noteEl.dataset.savedValue=note;
-    showStatus(`Keterangan dikirim ke ${sheet}, baris ${row}. Periksa kolom ${item?.noteColumn||''} pada spreadsheet.`,'success');
-    // Untuk RH, baca kembali sumber setelah Apps Script sempat menulis agar
-    // Tabulasi RH dan Harga RH segera memakai catatan yang sama.
-    if(sheet==='RH web')setTimeout(()=>syncRhFromSheet(true),1200);
+
+    // Satu sumber state untuk kedua tampilan RH agar perubahan langsung terlihat
+    // tanpa menunggu pembacaan ulang spreadsheet.
+    if(sheet==='RH web'){
+      state.rhAll.filter(x=>x.rowNumber===row).forEach(x=>x.note=note);
+      updateVisibleRhNote(row,note);
+      // Verifikasi cepat dari spreadsheet sesaat setelah POST.
+      setTimeout(()=>syncRhNotesFast(true),350);
+      setTimeout(()=>syncRhNotesFast(true),1100);
+    }
+    showStatus(`Keterangan tersimpan ke ${sheet}, baris ${row}.`,'success');
   }catch(e){
     showStatus(`Gagal mengirim keterangan: ${e.message}`,'error');
   }finally{
@@ -212,6 +205,27 @@ async function saveNote(btn){
     btn.textContent='Simpan';
   }
 }
+function postToAppsScript(fields){
+  return new Promise((resolve,reject)=>{
+    const url=String(CONFIG.appsScriptUrl||'').trim();
+    const iframe=document.createElement('iframe');
+    const name='gas_post_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    iframe.name=name; iframe.style.display='none'; iframe.setAttribute('aria-hidden','true');
+    const form=document.createElement('form');
+    form.method='POST'; form.action=url; form.target=name; form.style.display='none';
+    Object.entries(fields).forEach(([k,v])=>{const input=document.createElement('input');input.type='hidden';input.name=k;input.value=String(v??'');form.appendChild(input)});
+    document.body.append(iframe,form);
+    let done=false;
+    const finish=()=>{if(done)return;done=true;setTimeout(()=>{form.remove();iframe.remove()},50);resolve()};
+    iframe.addEventListener('load',()=>setTimeout(finish,80),{once:true});
+    try{form.submit();setTimeout(finish,900)}catch(err){form.remove();iframe.remove();reject(err)}
+  });
+}
+function updateVisibleRhNote(row,note){
+  const ids=[`note-RH_web-${row}`,`note-rhprice-${row}`];
+  ids.forEach(id=>{const el=$(id);if(el&&document.activeElement!==el){el.value=note;el.dataset.savedValue=note}});
+}
+
 function bindSaveButtons(){document.querySelectorAll('.save-note').forEach(b=>{b.onclick=()=>saveNote(b)})}
 function positiveValues(arr){return arr.filter(v=>Number.isFinite(v)&&v>0)}
 function commodityAnalysisBase(commodity){const p=currentPeriod(),kab=$('kabFilter').value,mt=$('marketTypeFilter').value,q=norm($('searchFilter').value).toLowerCase();return state.all.filter(x=>x.commodity===commodity&&(p==='Semua'||x.sheet===p)&&(!kab||x.kab===kab)&&(!mt||x.marketType===mt)&&(!q||[x.kab,x.commodityCode,x.commodity,x.quality,x.market,x.respondent,x.note,x.period].join(' ').toLowerCase().includes(q)))}
@@ -277,7 +291,7 @@ function trendStatsHtml(x){
 }
 function trendRowHtml(x){
   const largest=x.series.filter(s=>s.valid).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change))[0],cat=largest?.category||CHANGE_CATEGORIES[0];
-  return `<tr class="trend-row ${cat.className}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td><td><span class="commodity-code">${esc(x.commodityCode)}</span></td><td><strong>${esc(x.commodity)}</strong><small class="cell-sub">${esc(x.quality)}</small></td><td>${esc(x.market)}<small class="cell-sub">${esc(x.respondent)}</small></td><td>${priceTimelineHtml(x)}</td><td>${trendStatsHtml(x)}</td><td>${noteCell(x)}</td><td>${saveButton(x)}</td></tr>`;
+  return `<tr class="trend-row ${cat.className}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td><td><span class="commodity-code">${esc(x.commodityCode)}</span></td><td><strong>${esc(x.commodity)}</strong><small class="cell-sub">${esc(x.quality)}</small></td><td>${esc(x.market)}<small class="cell-sub">${esc(x.respondent)}</small></td><td>${priceTimelineHtml(x)}</td><td>${trendStatsHtml(x)}</td><td><textarea class="editable-note rh-note" id="note-rhprice-${x.rowNumber}">${esc(x.note)}</textarea></td><td><button class="btn primary save-note" data-sheet="RH web" data-row="${x.rowNumber}" data-note-id="note-rhprice-${x.rowNumber}">Simpan</button></td></tr>`;
 }
 function renderTrendLegend(){if(!$('trendLegend'))return;$('trendLegend').innerHTML=CHANGE_CATEGORIES.map(c=>`<span class="legend-chip ${c.className}"><i class="legend-dot" style="background:var(--cat-color)"></i>${esc(c.label)}</span>`).join('');const sel=$('trendCategoryFilter');if(sel&&sel.options.length===1)sel.innerHTML='<option value="">Semua kelompok</option>'+CHANGE_CATEGORIES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('');const psel=$('periodCategoryFilter');if(psel&&psel.options.length===1)psel.innerHTML='<option value="">Semua kelompok</option>'+CHANGE_CATEGORIES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('')}
 function renderTrend(){if(!$('trendTableBody'))return;renderTrendLegend();const d=sortedTrendData(),counts=Object.fromEntries(CHANGE_CATEGORIES.map(c=>[c.id,0]));d.forEach(x=>x.series.forEach(s=>{if(s.valid&&s.category)counts[s.category.id]++}));$('trendSummary').innerHTML=CHANGE_CATEGORIES.map(c=>`<article class="trend-summary-card ${c.className}"><span>${esc(c.label)}</span><strong>${fmtInt(counts[c.id])}</strong></article>`).join('');const p=paginate(d,state.trendPage,state.trendPageSize);state.trendPage=p.page;$('trendTableBody').innerHTML=p.rows.map(trendRowHtml).join('')||'<tr><td colspan="9">Tidak ada deret harga valid. Nilai 0 dan kosong dilewati.</td></tr>';$('trendPageInfo').textContent=state.trendPageSize==='all'?`Menampilkan semua • ${fmtInt(d.length)} baris • ${fmtInt(d.reduce((n,x)=>n+x.series.filter(s=>s.valid).length,0))} perubahan berurutan`:`Halaman ${p.page} dari ${p.pages} • ${fmtInt(d.length)} baris • ${fmtInt(d.reduce((n,x)=>n+x.series.filter(s=>s.valid).length,0))} perubahan berurutan`;bindSaveButtons();updateTrendSortMarks()}
@@ -359,7 +373,7 @@ function renderRh(){if(!$('rhTableBody'))return;const d=sortedRhPivot(),allVals=
 
 function rhPriceRows(){const f=rhFilterValues();let rows=state.rhAll.filter(x=>(!f.kab||x.kab===f.kab)&&(!f.kom||x.commodity.toLowerCase().includes(f.kom)||x.commodityCode.toLowerCase().includes(f.kom))&&(!f.q||[x.kab,x.commodityCode,x.commodity,x.note].join(' ').toLowerCase().includes(f.q))&&rhMatchesCategories(x.rh,f.cats));if(f.cond){const allowed=new Set(rhPivotRows().map(r=>r.commodityCode||r.commodity));rows=rows.filter(x=>allowed.has(x.commodityCode||x.commodity))}return rows}
 function sortedRhPrice(){const arr=rhPriceRows(),k=state.rhPriceSortKey,d=state.rhPriceSortDir==='asc'?1:-1;return arr.sort((a,b)=>{let av=a[k],bv=b[k];if(typeof av==='number'||typeof bv==='number'){av=Number.isFinite(av)?av:-Infinity;bv=Number.isFinite(bv)?bv:-Infinity;return(av-bv)*d}return String(av??'').localeCompare(String(bv??''),'id')*d})}
-function rhPriceRowHtml(x,n){const cls=rhValueClass(x.rh,false),chg=Number.isFinite(x.rh)?x.rh-100:null,cat=classifyChange(chg);return`<tr><td>${n}</td><td>${esc(x.kab)}</td><td><span class="commodity-code">${esc(x.commodityCode)}</span></td><td><strong>${esc(x.commodity)}</strong></td><td class="num"><div class="period-price-card base-price"><span>Previous</span><strong>${fmtMoney(x.prev)}</strong></div></td><td class="num"><div class="period-price-card current-price ${cat?.className||''}"><span>Current</span><strong>${fmtMoney(x.current)}</strong></div></td><td class="num"><span class="rh-price-badge ${cls}">${Number.isFinite(x.rh)?x.rh.toFixed(2).replace('.',','):'–'}<small>${Number.isFinite(chg)?fmtPct(chg):'–'}</small></span></td><td>${noteCell(x)}</td><td>${saveButton(x)}</td></tr>`}
+function rhPriceRowHtml(x,n){const cls=rhValueClass(x.rh,false),chg=Number.isFinite(x.rh)?x.rh-100:null,cat=classifyChange(chg);return`<tr><td>${n}</td><td>${esc(x.kab)}</td><td><span class="commodity-code">${esc(x.commodityCode)}</span></td><td><strong>${esc(x.commodity)}</strong></td><td class="num"><div class="period-price-card base-price"><span>Previous</span><strong>${fmtMoney(x.prev)}</strong></div></td><td class="num"><div class="period-price-card current-price ${cat?.className||''}"><span>Current</span><strong>${fmtMoney(x.current)}</strong></div></td><td class="num"><span class="rh-price-badge ${cls}">${Number.isFinite(x.rh)?x.rh.toFixed(2).replace('.',','):'–'}<small>${Number.isFinite(chg)?fmtPct(chg):'–'}</small></span></td><td><textarea class="editable-note rh-note" id="note-rhprice-${x.rowNumber}">${esc(x.note)}</textarea></td><td><button class="btn primary save-note" data-sheet="RH web" data-row="${x.rowNumber}" data-note-id="note-rhprice-${x.rowNumber}">Simpan</button></td></tr>`}
 function renderRhPrice(){if(!$('rhPriceTableBody'))return;const d=sortedRhPrice();$('rhPriceKpiObs').textContent=fmtInt(d.length);$('rhPriceKpiUp').textContent=fmtInt(d.filter(x=>x.rh>100).length);$('rhPriceKpiDown').textContent=fmtInt(d.filter(x=>x.rh<100).length);$('rhPriceKpiStable').textContent=fmtInt(d.filter(x=>Number.isFinite(x.rh)&&Math.abs(x.rh-100)<1e-9).length);const p=paginate(d,state.rhPricePage,state.rhPricePageSize);state.rhPricePage=p.page;const size=state.rhPricePageSize==='all'?d.length:Number(state.rhPricePageSize),start=d.length?((p.page-1)*size+1):0,end=Math.min(p.page*size,d.length);$('rhPriceTableBody').innerHTML=p.rows.map((x,i)=>rhPriceRowHtml(x,state.rhPricePageSize==='all'?i+1:(p.page-1)*Number(state.rhPricePageSize)+i+1)).join('')||'<tr><td colspan="9">Tidak ada data sesuai filter.</td></tr>';$('rhPricePageInfo').textContent=state.rhPricePageSize==='all'?`Menampilkan semua ${fmtInt(d.length)} observasi`:`Menampilkan ${fmtInt(start)}–${fmtInt(end)} dari ${fmtInt(d.length)} observasi • ${fmtInt(p.rows.length)} baris pada halaman ini`;$('rhPricePrevPage').disabled=p.page<=1;$('rhPriceNextPage').disabled=p.page>=p.pages;bindSaveButtons();updateRhPriceSortMarks()}
 function updateRhSortMarks(){document.querySelectorAll('th[data-rh-sort]').forEach(th=>{th.classList.remove('sorted-asc','sorted-desc');if(th.dataset.rhSort===state.rhSortKey)th.classList.add(state.rhSortDir==='asc'?'sorted-asc':'sorted-desc')})}
 function updateRhPriceSortMarks(){document.querySelectorAll('th[data-rhp-sort]').forEach(th=>{th.classList.remove('sorted-asc','sorted-desc');if(th.dataset.rhpSort===state.rhPriceSortKey)th.classList.add(state.rhPriceSortDir==='asc'?'sorted-asc':'sorted-desc')})}
@@ -369,8 +383,46 @@ function resetRhPriceOrder(){state.rhPriceSortKey='rawOrder';state.rhPriceSortDi
 function rhExportMatrix(){return[['No','Kode Komoditas','Komoditas',...RH_KABS.flatMap(k=>[`RH ${k}`,`Keterangan ${k}`])],...sortedRhPivot().map((r,i)=>[i+1,r.commodityCode,r.commodity,...RH_KABS.flatMap(k=>[r.byKab[k]?.rh??'',r.byKab[k]?.note??''])])]}
 function rhPriceExportMatrix(){return[['No','Wilayah','Kode Komoditas','Komoditas','Previous','Current','RH','Klasifikasi RH','Keterangan'],...sortedRhPrice().map((x,i)=>[i+1,x.kab,x.commodityCode,x.commodity,x.prev??'',x.current??'',x.rh??'',rhCategory(x.rh)?.label||'',x.note])]}
 async function exportRh(kind){const isPivot=kind==='rh',format=$(isPivot?'rhExportFormat':'rhPriceExportFormat').value,matrix=isPivot?rhExportMatrix():rhPriceExportMatrix(),filename=isPivot?'tabulasi-rh':'harga-rh';if(format==='csv')return exportMatrixCsv(matrix,filename);if(format==='xlsx')return exportMatrixXlsx(matrix,filename);return captureEvaluation(isPivot?'rhExportArea':'rhPriceExportArea',filename,format)}
+function jsonpAppsScript(params,timeoutMs=5000){
+  return new Promise((resolve,reject)=>{
+    const base=String(CONFIG.appsScriptUrl||'').trim();
+    if(!base||base.includes('PASTE_URL')||!base.endsWith('/exec'))return reject(new Error('URL Apps Script belum diatur'));
+    const callback='__rhSync_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    let finished=false;
+    const cleanup=()=>{try{delete window[callback]}catch(_){window[callback]=undefined}script.remove()};
+    const timer=setTimeout(()=>{if(finished)return;finished=true;cleanup();reject(new Error('Timeout sinkronisasi RH'))},timeoutMs);
+    window[callback]=data=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();resolve(data)};
+    const qs=new URLSearchParams({...params,callback,ts:String(Date.now())});
+    script.src=base+'?'+qs.toString();
+    script.onerror=()=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();reject(new Error('Gagal membaca Keterangan RH'))};
+    document.head.appendChild(script);
+  });
+}
+async function syncRhNotesFast(silent=false){
+  const active=document.activeElement;
+  if(state.rhSyncBusy||(active&&active.matches&&active.matches('textarea.rh-note, #rhPriceTableBody textarea.editable-note')))return;
+  state.rhSyncBusy=true;
+  try{
+    const result=await jsonpAppsScript({action:'getRhNotes',token:'harga1900'});
+    if(!result||result.ok===false)throw new Error(result?.message||'Respons sinkronisasi tidak valid');
+    const notes=new Map((result.rows||[]).map(x=>[Number(x.row),String(x.note??'')]));
+    let changed=0;
+    state.rhAll.forEach(x=>{
+      if(notes.has(x.rowNumber)){
+        const note=notes.get(x.rowNumber);
+        if(x.note!==note){x.note=note;changed++}
+        updateVisibleRhNote(x.rowNumber,note);
+      }
+    });
+    $('lastUpdate').textContent=`Diperbarui ${new Date().toLocaleString('id-ID')}`;
+    if(!silent)showStatus(`Keterangan RH tersinkron (${fmtInt(changed)} perubahan).`,'success');
+  }catch(e){
+    if(!silent)showStatus(`Sinkronisasi Keterangan RH gagal: ${e.message}`,'error');
+  }finally{state.rhSyncBusy=false}
+}
 async function syncRhFromSheet(silent=false){
-  // Jangan mengganti isi textarea saat pengguna sedang mengetik.
+  // Sinkron penuh tetap tersedia untuk tombol Muat ulang / perubahan nilai RH.
   const active=document.activeElement;
   if(state.rhSyncBusy||(active&&active.matches&&active.matches('textarea.rh-note, #rhPriceTableBody textarea.editable-note')))return;
   state.rhSyncBusy=true;
@@ -388,8 +440,11 @@ async function syncRhFromSheet(silent=false){
 }
 function startRhAutoSync(){
   if(state.rhSyncTimer)clearInterval(state.rhSyncTimer);
-  state.rhSyncTimer=setInterval(()=>{if(state.view==='rh'||state.view==='rhprice')syncRhFromSheet(true)},CONFIG.rhSyncIntervalMs);
+  // Hanya tarik kolom Keterangan melalui Apps Script setiap 2 detik.
+  // Ini lebih cepat daripada membaca ulang seluruh sheet via CSV/gviz.
+  state.rhSyncTimer=setInterval(()=>{if(state.view==='rh'||state.view==='rhprice')syncRhNotesFast(true)},CONFIG.rhSyncIntervalMs);
 }
+
 function refreshRhViews(){state.rhPage=1;state.rhPricePage=1;renderRh();renderRhPrice()}
 
 function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const isRh=view==='rh'||view==='rhprice';$('globalFilters').classList.toggle('hidden',isRh);$('rhFilters').classList.toggle('hidden',!isRh);const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Evaluasi Bulanan','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas × Kualitas','Perbandingan harga menurut komoditas, kualitas, dan wilayah.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Mingguan','Deret perubahan harga mingguan secara berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],matrix:['Matriks Komoditas','Seluruh komoditas × kualitas × kabupaten/kota dalam satu tabel analisis.'],rh:['Tabulasi RH','Perbandingan RH antar kabupaten/kota berdasarkan komoditas.'],rhprice:['Harga RH','Previous, Current, RH, dan Keterangan dari sheet RH web.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
