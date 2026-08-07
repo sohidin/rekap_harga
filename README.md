@@ -148,3 +148,7 @@ Evaluasi Bulanan menampilkan sembilan kartu distribusi kelompok perubahan (tetap
 
 ## Filter besar perubahan (multi-select)
 Evaluasi Bulanan dan Evaluasi Mingguan memiliki filter besar perubahan yang dapat dipilih lebih dari satu: Tidak ada perubahan harga, >0–19,99%, ±20–49,99%, ±50–99,99%, dan ±100% atau lebih. Jika tidak ada pilihan, semua data ditampilkan. Pada Evaluasi Mingguan, sebuah baris lolos jika minimal satu perubahan berurutan masuk ke kelompok yang dipilih.
+
+
+## Koreksi tampilan filter 5 kategori
+Versi ini memastikan lima pilihan filter tampil di Evaluasi Bulanan dan Evaluasi Mingguan: Tidak ada perubahan harga; >0–19,99%; ±20–49,99%; ±50–99,99%; dan ±100% atau lebih. `index.html` juga menggunakan cache-busting pada CSS/JS agar GitHub Pages/browser tidak mempertahankan tampilan versi lama. Setelah upload, lakukan hard refresh (Ctrl+F5).
