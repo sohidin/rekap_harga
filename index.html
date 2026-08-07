@@ -36,7 +36,7 @@
       <button class="nav-item" data-view="commodity"><span>◈</span>Komoditas</button>
       <button class="nav-item" data-view="market"><span>⌖</span>Pasar</button>
       <button class="nav-item" data-view="evaluation"><span>⚑</span>Evaluasi Ringkas</button>
-      <button class="nav-item" data-view="recap"><span>≣</span>Rekap Data</button>
+      <button class="nav-item" data-view="matrix"><span>▤</span>Matriks Harga</button>
     </nav>
     <div class="sidebar-bottom">
       <a class="sheet-link" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg/edit">Buka Spreadsheet ↗</a>
@@ -56,7 +56,8 @@
     <section id="globalFilters" class="filters">
       <label>Periode<select id="periodFilter"><option value="Mingguan">Mingguan</option><option value="Dwi Mingguan">Dwi Mingguan</option><option value="bulanan">Bulanan</option><option value="Semua">Tampilkan Semua</option></select></label>
       <label>Wilayah<select id="kabFilter"><option value="">Semua wilayah</option></select></label>
-      <label>Komoditas<select id="commodityFilter"><option value="">Semua komoditas</option></select></label>
+      <label>Komoditas<div class="searchable-combo"><input id="commodityFilter" list="commodityFilterList" placeholder="Semua komoditas" autocomplete="off"><datalist id="commodityFilterList"></datalist></div></label>
+      <label>Kualitas<div class="searchable-combo"><input id="qualityFilter" list="qualityFilterList" placeholder="Semua kualitas" autocomplete="off"><datalist id="qualityFilterList"></datalist></div></label>
       <label>Jenis pasar<select id="marketTypeFilter"><option value="">Semua jenis pasar</option></select></label>
       <label class="search">Pencarian<input id="searchFilter" type="search" placeholder="Pasar, responden, kualitas, keterangan"></label>
       <label class="check-filter"><input id="extremeOnly" type="checkbox"> Hanya perubahan ≤−20% atau ≥+20% <span class="filter-hint">(bawaan: tampilkan semua)</span></label>
@@ -76,11 +77,11 @@
     </section>
 
     <section id="view-commodity" class="view">
-      <div class="section-heading commodity-heading"><div><h2>Analisis Komoditas × Kualitas</h2><p>Harga tidak dicampur antar-kualitas. Ringkasan utama menggabungkan seluruh kabupaten/kota sesuai periode dan jenis pasar aktif.</p></div><div class="commodity-selectors"><label>Komoditas<select id="commodityFocus" class="focus-select"></select></label><label>Kualitas<select id="qualityFocus" class="focus-select"></select></label></div></div>
+      <div class="section-heading commodity-heading"><div><h2>Analisis Komoditas × Kualitas</h2><p>Gunakan filter Komoditas dan Kualitas di atas. Harga tidak dicampur antar-kualitas; ringkasan menggabungkan seluruh kabupaten/kota sesuai filter aktif.</p></div></div>
       <div class="commodity-context" id="commoditySelectionInfo">Pilih komoditas dan kualitas.</div>
       <div class="kpi-grid four"><article class="kpi"><span>Rata-rata Prev • kualitas terpilih</span><strong id="commodityPrev">–</strong><small>Gabungan seluruh kabupaten/kota</small></article><article class="kpi"><span>Rata-rata Current • kualitas terpilih</span><strong id="commodityCurrent">–</strong><small>Gabungan seluruh kabupaten/kota</small></article><article class="kpi"><span>Perubahan rata-rata</span><strong id="commodityChange">–</strong><small>Prev → Current</small></article><article class="kpi"><span>Observasi</span><strong id="commodityObs">–</strong><small id="commodityRegionCount">– wilayah</small></article></div>
       <div class="grid two commodity-chart-grid"><article class="panel"><div class="panel-head"><div><h3>Rata-rata harga per Kabupaten/Kota</h3><p>Prev dan Current untuk komoditas × kualitas terpilih.</p></div></div><div class="chart-box tall"><canvas id="commodityRegionChart"></canvas></div></article><article class="panel"><div class="panel-head"><div><h3>Rentang harga Current per Kabupaten/Kota</h3><p>Batang menunjukkan minimum–maksimum; garis menunjukkan rata-rata Current.</p></div></div><div class="chart-box tall"><canvas id="commodityRangeChart"></canvas></div></article></div>
-      <div class="grid two commodity-table-grid"><article class="panel"><div class="panel-head"><div><h3>Ringkasan seluruh kualitas</h3><p>Rata-rata per kualitas untuk komoditas terpilih, gabungan seluruh kabupaten/kota.</p></div></div><div class="table-wrap commodity-table-wrap"><table class="compact-data-table"><thead><tr><th>Kode</th><th>Kualitas</th><th class="num">Avg Prev</th><th class="num">Avg Current</th><th class="num">Perubahan</th><th class="num">Min Current</th><th class="num">Max Current</th><th class="num">Obs</th></tr></thead><tbody id="commodityQualityBody"></tbody></table></div></article><article class="panel"><div class="panel-head"><div><h3>Statistik wilayah • kualitas terpilih</h3><p>Rata-rata, minimum, dan maksimum harga untuk setiap kabupaten/kota.</p></div></div><div class="table-wrap commodity-table-wrap"><table class="compact-data-table"><thead><tr><th>Wilayah</th><th class="num">Avg Prev</th><th class="num">Avg Current</th><th class="num">Min Current</th><th class="num">Max Current</th><th class="num">Obs</th></tr></thead><tbody id="commodityRegionBody"></tbody></table></div></article></div>
+      <div class="grid two commodity-table-grid"><article class="panel"><div class="panel-head"><div><h3>Ringkasan seluruh kualitas</h3><p>Rata-rata per kualitas untuk komoditas terpilih, gabungan seluruh kabupaten/kota.</p></div></div><div class="table-wrap commodity-table-wrap"><table class="compact-data-table"><thead><tr><th>Kode</th><th>Kualitas</th><th class="num">Jml Wilayah</th><th>Wilayah</th><th class="num">Avg Prev</th><th class="num">Avg Current</th><th class="num">Perubahan</th><th class="num">Min Current</th><th class="num">Max Current</th><th class="num">Obs</th></tr></thead><tbody id="commodityQualityBody"></tbody></table></div></article><article class="panel"><div class="panel-head"><div><h3>Statistik wilayah • kualitas terpilih</h3><p>Rata-rata, minimum, dan maksimum harga untuk setiap kabupaten/kota.</p></div></div><div class="table-wrap commodity-table-wrap"><table class="compact-data-table"><thead><tr><th>Wilayah</th><th class="num">Avg Prev</th><th class="num">Avg Current</th><th class="num">Min Current</th><th class="num">Max Current</th><th class="num">Obs</th></tr></thead><tbody id="commodityRegionBody"></tbody></table></div></article></div>
     </section>
 
     <section id="view-market" class="view"><div class="section-heading"><div><h2>Analisis Pasar</h2><p>Pasar dengan perubahan harga terbesar.</p></div></div><article class="panel"><div class="chart-box tall"><canvas id="marketRankingChart"></canvas></div></article></section>
@@ -103,7 +104,7 @@
             <thead><tr>
               <th data-trend-sort="period">Periode</th><th data-trend-sort="kab">Wilayah</th><th data-trend-sort="commodityCode">Kode Komoditas</th>
               <th data-trend-sort="commodity">Komoditas / Kualitas</th><th data-trend-sort="market">Pasar / Responden</th>
-              <th>Perjalanan harga</th><th data-trend-sort="maxAbsChange">Ringkasan tren</th><th data-trend-sort="note">Keterangan</th><th>Aksi</th>
+              <th>Harga</th><th data-trend-sort="maxAbsChange">Ringkasan tren</th><th data-trend-sort="note">Keterangan</th><th>Aksi</th>
             </tr></thead>
             <tbody id="trendTableBody"></tbody>
           </table>
@@ -114,9 +115,13 @@
 
     <section id="view-evaluation" class="view"><div class="section-heading"><div><h2>Evaluasi Otomatis</h2><p>Prioritas pemeriksaan perubahan harga ekstrem.</p></div><span id="riskBadge" class="badge">–</span></div><div id="evaluationCards" class="evaluation-grid"></div><article class="panel"><div id="priorityList" class="priority-list"></div></article></section>
 
-    <section id="view-recap" class="view">
-      <div class="section-heading"><div><h2>Rekap Data</h2><p>Rekap data sesuai filter aktif.</p></div><button id="downloadBtn" class="btn secondary">Unduh CSV</button></div>
-      <article class="panel"><div class="table-wrap large"><table id="recapTable"><thead><tr><th data-sort="period">Periode</th><th data-sort="kab">Wilayah</th><th data-sort="commodity">Komoditas</th><th data-sort="quality">Kualitas</th><th data-sort="marketType">Jenis Pasar</th><th data-sort="market">Pasar</th><th data-sort="respondent">Nama Responden</th><th data-sort="prev" class="num">Prev</th><th data-sort="current" class="num">Current</th><th data-sort="change" class="num">Perubahan</th><th data-sort="note">Keterangan</th><th>Aksi</th></tr></thead><tbody id="recapBody"></tbody></table></div><div class="pagination"><button id="prevPage" class="btn secondary">← Sebelumnya</button><span id="pageInfo">Halaman 1</span><button id="nextPage" class="btn secondary">Berikutnya →</button></div></article>
+    <section id="view-matrix" class="view">
+      <div class="section-heading"><div><h2>Matriks Harga Komoditas × Kualitas × Wilayah</h2><p>Ringkasan seluruh kombinasi komoditas, kualitas, dan kabupaten/kota sesuai filter aktif. Klik judul kolom untuk mengurutkan.</p></div></div>
+      <article id="matrixExportArea" class="panel">
+        <div class="panel-head matrix-toolbar"><div><h3>Ringkasan seluruh kombinasi</h3><p>Rata-rata Prev/Current, perubahan, rentang harga Current, jumlah pasar, dan observasi.</p></div><div class="export-control"><select id="matrixExportFormat" class="page-size-select"><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (.csv)</option><option value="pdf">PDF (.pdf)</option><option value="png">Image (.png)</option></select><button id="matrixExportBtn" class="btn primary export-btn" type="button">↓ Download</button></div></div>
+        <div class="table-wrap large"><table id="matrixTable" class="matrix-table"><thead><tr><th data-matrix-sort="period">Periode</th><th data-matrix-sort="commodityCode">Kode</th><th data-matrix-sort="commodity">Komoditas</th><th data-matrix-sort="quality">Kualitas</th><th data-matrix-sort="kab">Wilayah</th><th data-matrix-sort="avgPrev" class="num">Avg Prev</th><th data-matrix-sort="avgCurrent" class="num">Avg Current</th><th data-matrix-sort="change" class="num">Perubahan</th><th data-matrix-sort="minCurrent" class="num">Min Current</th><th data-matrix-sort="maxCurrent" class="num">Max Current</th><th data-matrix-sort="markets" class="num">Jml Pasar</th><th data-matrix-sort="obs" class="num">Obs</th></tr></thead><tbody id="matrixBody"></tbody></table></div>
+        <div class="matrix-footer"><span id="matrixInfo" class="muted">–</span><button id="matrixRawOrderBtn" class="btn secondary" type="button">↺ Urutan Komoditas/Kualitas/Wilayah</button></div>
+      </article>
     </section>
     <footer>GitHub Pages • Data langsung dari Google Sheets • Keterangan tersimpan melalui Google Apps Script</footer>
   </main>

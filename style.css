@@ -71,3 +71,20 @@
 .commodity-heading{align-items:flex-end}.commodity-selectors{display:flex;gap:10px;min-width:min(620px,55vw)}.commodity-selectors label{flex:1;font-size:10px;font-weight:800;color:var(--muted)}.commodity-selectors .focus-select{width:100%;margin-top:6px}.commodity-context{margin:-3px 0 13px;padding:10px 13px;border:1px solid #d9e6f3;background:linear-gradient(90deg,#f4f9ff,#fff);border-radius:10px;color:#3a526b;font-size:11px}.commodity-context strong{font-size:12px;color:#143b63}.commodity-context span{padding:0 5px;color:#7a8da0}.commodity-context small{color:var(--muted)}.commodity-chart-grid{align-items:stretch}.commodity-table-grid{align-items:start}.commodity-table-wrap{max-height:430px}.compact-data-table{min-width:720px}.compact-data-table th{white-space:nowrap}.compact-data-table td{font-size:10.5px}.selected-quality-row{background:#edf6ff}.selected-quality-row td:first-child{box-shadow:inset 4px 0 0 #1769e0}.compact-data-table .pill{font-size:9px}.pill.stable{background:#edf1f5;color:#667789}
 @media(max-width:1100px){.commodity-heading{align-items:flex-start;flex-direction:column}.commodity-selectors{width:100%;min-width:0}.commodity-chart-grid,.commodity-table-grid{grid-template-columns:1fr}.export-control{width:100%;padding-left:0}.export-control .page-size-select{flex:1}}
 @media(max-width:700px){.commodity-selectors{flex-direction:column}.export-control{flex-wrap:wrap}.export-control .page-size-select,.export-btn{width:100%}}
+
+/* Revisi keterbacaan 2026-08-07 */
+.searchable-combo{position:relative}.searchable-combo input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);font:inherit}.searchable-combo input:focus{outline:2px solid rgba(23,105,224,.16);border-color:#1769e0}
+
+/* Evaluasi Mingguan: hilangkan ruang kosong besar antara Pasar/Responden dan Harga */
+.trend-table{min-width:1480px;table-layout:auto}.trend-table th:nth-child(5),.trend-table td:nth-child(5){width:175px;min-width:175px;max-width:210px}.trend-table th:nth-child(6),.trend-table td:nth-child(6){width:auto;min-width:760px}.price-visual{min-width:740px}.price-timeline{padding-left:4px;padding-right:4px}.trend-table th:nth-child(6){text-align:center}
+
+/* Evaluasi Bulanan: tiga kolom numerik utama berada di tengah */
+#periodTable th:nth-child(8),#periodTable th:nth-child(9),#periodTable th:nth-child(10){text-align:center!important}#periodTable td:nth-child(8),#periodTable td:nth-child(9),#periodTable td:nth-child(10){text-align:center!important}#periodTable td:nth-child(8) .period-price-card,#periodTable td:nth-child(9) .period-price-card,#periodTable td:nth-child(10) .change-badge{margin-left:auto;margin-right:auto}
+
+/* Ringkasan kualitas: daftar wilayah tetap ringkas tetapi mudah dibaca */
+.region-list{display:block;min-width:170px;max-width:300px;white-space:normal;line-height:1.45;color:#40546a;font-size:10px}.commodity-table-wrap .compact-data-table{min-width:980px}
+
+/* Matriks Harga */
+.matrix-toolbar{align-items:flex-end}.matrix-table{min-width:1400px}.matrix-table th{white-space:nowrap;cursor:pointer}.matrix-table td{font-size:10.5px;vertical-align:middle}.matrix-table td:nth-child(3),.matrix-table td:nth-child(4){min-width:180px;white-space:normal}.matrix-table td:nth-child(5){min-width:110px}.matrix-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 2px 0}.matrix-table .pill{font-size:9px;white-space:nowrap}
+
+@media(max-width:1000px){.trend-table th:nth-child(5),.trend-table td:nth-child(5){min-width:150px}.trend-table th:nth-child(6),.trend-table td:nth-child(6){min-width:700px}.price-visual{min-width:680px}.matrix-footer{align-items:stretch;flex-direction:column}.matrix-footer .btn{width:100%}}

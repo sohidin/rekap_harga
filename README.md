@@ -136,3 +136,11 @@ Evaluasi Bulanan menampilkan sembilan kartu distribusi kelompok perubahan (tetap
 - Kedua evaluasi mempunyai ekspor **Excel, CSV, PDF, dan PNG**. Excel/CSV mengekspor seluruh data sesuai filter dan sort aktif; PDF/PNG menangkap halaman evaluasi yang sedang tampil.
 - Menu Komoditas sekarang menggunakan dua tingkat pemilihan: **Komoditas → Kualitas**. Harga antar-kualitas tidak dicampur pada KPI utama.
 - Ringkasan Komoditas menampilkan rata-rata Prev/Current gabungan seluruh kabupaten/kota, ringkasan semua kualitas, rata-rata harga per kabupaten/kota, serta minimum–maksimum Current per kabupaten/kota.
+
+## Revisi antarmuka terbaru
+- Evaluasi Mingguan: kolom Pasar/Responden dipadatkan dan judul **Perjalanan Harga** menjadi **Harga**.
+- Evaluasi Bulanan: judul Previous, Current, dan Perubahan diratakan ke tengah.
+- Filter Komoditas dan Kualitas menggunakan kotak pencarian dengan saran (datalist), sehingga dapat diketik untuk mencari.
+- Menu Komoditas menggunakan filter: Periode, Wilayah, Komoditas, Kualitas, Jenis Pasar, dan Pencarian.
+- Ringkasan Seluruh Kualitas memiliki **Jumlah Wilayah** dan daftar wilayah tempat kualitas ditemukan.
+- Menu **Matriks Harga** menggantikan Rekap Data dan merangkum seluruh Komoditas × Kualitas × Kabupaten/Kota. Tabel dapat di-sort dan di-download Excel, CSV, PDF, atau PNG.
