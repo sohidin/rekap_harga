@@ -210,3 +210,9 @@ Versi ini memperbaiki benturan ID textarea antar menu. `Harga RH` sekarang memak
 - Filter **Kondisi Antarwilayah** hanya tampil pada **Tabulasi RH**.
 - Pada **Harga RH**, data tetap berbentuk baris per kabupaten/kota (Previous, Current, RH), sehingga filter antarwilayah tidak digunakan.
 - Filter Wilayah, Komoditas, klasifikasi nilai RH, pencarian, sorting, jumlah baris, download, dan Keterangan tetap tersedia.
+
+
+## Filter khusus Evaluasi Mingguan
+- `Minimal 1 Minggu Tetap` menampilkan baris yang memiliki minimal satu perpindahan minggu dengan harga tetap (0%).
+- `Semua Minggu Tidak Berubah` tampil paling kiri pada menu Evaluasi Mingguan dan hanya menampilkan baris yang seluruh perpindahan harga validnya tetap (0%).
+- Filter besar perubahan lain tetap dapat dikombinasikan.
