@@ -2,7 +2,8 @@ const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
   appsScriptUrl:'https://script.google.com/macros/s/AKfycbwe2FvCpkYpEiXhWyMW2BXuqNB9TcJaNq9MqigpNk_UjKda8CA5VyGPnpnPmD0nBcrtWg/exec',
   credentials:{username:'harga1900',password:'harga1900'},
-  pageSize:25
+  pageSize:25,
+  rhSyncIntervalMs:10000
 };
 const SHEETS={
   'Mingguan':{
@@ -24,7 +25,7 @@ const SHEETS={
 
 const RH_SHEET={name:'RH web',lastColumn:'H',kabIndex:0,commodityCodeIndex:2,commodityIndex:3,prevIndex:4,currentIndex:5,rhIndex:6,noteIndex:7,noteColumn:'H'};
 const RH_KABS=['1902','1903','1906','1971'];
-const state={all:[],filtered:[],rhAll:[],view:'dashboard',periodPage:1,trendPage:1,rhPage:1,rhPricePage:1,periodPageSize:50,trendPageSize:50,rhPageSize:25,rhPricePageSize:25,periodSortKey:'rawOrder',periodSortDir:'asc',trendSortKey:'rawOrder',trendSortDir:'asc',matrixSortKey:'rawOrder',matrixSortDir:'asc',rhSortKey:'rawOrder',rhSortDir:'asc',rhPriceSortKey:'rawOrder',rhPriceSortDir:'asc',charts:{}};
+const state={all:[],filtered:[],rhAll:[],rhSyncTimer:null,rhSyncBusy:false,view:'dashboard',periodPage:1,trendPage:1,rhPage:1,rhPricePage:1,periodPageSize:50,trendPageSize:50,rhPageSize:25,rhPricePageSize:25,periodSortKey:'rawOrder',periodSortDir:'asc',trendSortKey:'rawOrder',trendSortDir:'asc',matrixSortKey:'rawOrder',matrixSortDir:'asc',rhSortKey:'rawOrder',rhSortDir:'asc',rhPriceSortKey:'rawOrder',rhPriceSortDir:'asc',charts:{}};
 const SHEET_ORDER={'Mingguan':0,'Dwi Mingguan':1,'bulanan':2};
 const $=id=>document.getElementById(id);
 const norm=v=>String(v??'').trim();
@@ -75,7 +76,7 @@ function buildTimeline(row,cfg){
 function showStatus(msg,type='info'){const el=$('status');el.textContent=msg;el.className=`alert ${type}`;setTimeout(()=>el.classList.add('hidden'),5000)}
 function currentPeriod(){return $('periodFilter').value}
 function periodLabel(v){return v==='bulanan'?'Bulanan':v}
-function csvUrl(sheet,cfg){return `https://docs.google.com/spreadsheets/d/${CONFIG.spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}&range=A2:${cfg.lastColumn}`}
+function csvUrl(sheet,cfg){return `https://docs.google.com/spreadsheets/d/${CONFIG.spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}&range=A2:${cfg.lastColumn}&_=${Date.now()}`}
 async function fetchSheet(sheet,cfg){const res=await fetch(csvUrl(sheet,cfg),{cache:'no-store'});if(!res.ok)throw new Error(`Gagal membaca sheet ${sheet}`);const text=await res.text();const parsed=Papa.parse(text,{skipEmptyLines:true}).data;if(parsed.length<2)return[];return parsed.slice(1).map((r,i)=>{
   const prev=priceNum(r[cfg.prevIndex]),current=priceNum(r[cfg.currentIndex]);
   const change=prev&&current!=null?((current-prev)/prev)*100:null;
@@ -167,7 +168,9 @@ async function saveNote(btn){
   const sheet=btn.dataset.sheet;
   const row=Number(btn.dataset.row);
   const rowEl=btn.closest('tr');
-  const noteEl=(rowEl&&rowEl.querySelector('textarea.editable-note'))||$(btn.dataset.noteId);
+  // Prioritaskan textarea yang memang terkait dengan tombol ini. Ini penting
+  // pada Tabulasi RH karena satu baris dapat memiliki 4 kotak Keterangan.
+  const noteEl=$(btn.dataset.noteId)||(btn.closest('details')&&btn.closest('details').querySelector('textarea.editable-note'))||(rowEl&&rowEl.querySelector('textarea.editable-note'));
   const note=noteEl ? noteEl.value : '';
 
   btn.disabled=true;
@@ -196,8 +199,11 @@ async function saveNote(btn){
 
     const item=state.all.find(x=>x.sheet===sheet&&x.rowNumber===row)||state.rhAll.find(x=>x.sheet===sheet&&x.rowNumber===row);
     if(item)item.note=note;
-    noteEl.dataset.savedValue=note;
+    if(noteEl)noteEl.dataset.savedValue=note;
     showStatus(`Keterangan dikirim ke ${sheet}, baris ${row}. Periksa kolom ${item?.noteColumn||''} pada spreadsheet.`,'success');
+    // Untuk RH, baca kembali sumber setelah Apps Script sempat menulis agar
+    // Tabulasi RH dan Harga RH segera memakai catatan yang sama.
+    if(sheet==='RH web')setTimeout(()=>syncRhFromSheet(true),1200);
   }catch(e){
     showStatus(`Gagal mengirim keterangan: ${e.message}`,'error');
   }finally{
@@ -363,8 +369,29 @@ function resetRhPriceOrder(){state.rhPriceSortKey='rawOrder';state.rhPriceSortDi
 function rhExportMatrix(){return[['No','Kode Komoditas','Komoditas',...RH_KABS.flatMap(k=>[`RH ${k}`,`Keterangan ${k}`])],...sortedRhPivot().map((r,i)=>[i+1,r.commodityCode,r.commodity,...RH_KABS.flatMap(k=>[r.byKab[k]?.rh??'',r.byKab[k]?.note??''])])]}
 function rhPriceExportMatrix(){return[['No','Wilayah','Kode Komoditas','Komoditas','Previous','Current','RH','Klasifikasi RH','Keterangan'],...sortedRhPrice().map((x,i)=>[i+1,x.kab,x.commodityCode,x.commodity,x.prev??'',x.current??'',x.rh??'',rhCategory(x.rh)?.label||'',x.note])]}
 async function exportRh(kind){const isPivot=kind==='rh',format=$(isPivot?'rhExportFormat':'rhPriceExportFormat').value,matrix=isPivot?rhExportMatrix():rhPriceExportMatrix(),filename=isPivot?'tabulasi-rh':'harga-rh';if(format==='csv')return exportMatrixCsv(matrix,filename);if(format==='xlsx')return exportMatrixXlsx(matrix,filename);return captureEvaluation(isPivot?'rhExportArea':'rhPriceExportArea',filename,format)}
+async function syncRhFromSheet(silent=false){
+  // Jangan mengganti isi textarea saat pengguna sedang mengetik.
+  const active=document.activeElement;
+  if(state.rhSyncBusy||(active&&active.matches&&active.matches('textarea.rh-note, #rhPriceTableBody textarea.editable-note')))return;
+  state.rhSyncBusy=true;
+  try{
+    const fresh=await fetchRhSheet();
+    state.rhAll=fresh;
+    populateRhFilters();
+    if(state.view==='rh')renderRh();
+    if(state.view==='rhprice')renderRhPrice();
+    $('lastUpdate').textContent=`Diperbarui ${new Date().toLocaleString('id-ID')}`;
+    if(!silent)showStatus('Data RH dan Keterangan berhasil disinkronkan dari spreadsheet.','success');
+  }catch(e){
+    if(!silent)showStatus(`Sinkronisasi RH gagal: ${e.message}`,'error');
+  }finally{state.rhSyncBusy=false}
+}
+function startRhAutoSync(){
+  if(state.rhSyncTimer)clearInterval(state.rhSyncTimer);
+  state.rhSyncTimer=setInterval(()=>{if(state.view==='rh'||state.view==='rhprice')syncRhFromSheet(true)},CONFIG.rhSyncIntervalMs);
+}
 function refreshRhViews(){state.rhPage=1;state.rhPricePage=1;renderRh();renderRhPrice()}
 
 function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const isRh=view==='rh'||view==='rhprice';$('globalFilters').classList.toggle('hidden',isRh);$('rhFilters').classList.toggle('hidden',!isRh);const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Evaluasi Bulanan','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas × Kualitas','Perbandingan harga menurut komoditas, kualitas, dan wilayah.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Mingguan','Deret perubahan harga mingguan secara berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],matrix:['Matriks Komoditas','Seluruh komoditas × kualitas × kabupaten/kota dalam satu tabel analisis.'],rh:['Tabulasi RH','Perbandingan RH antar kabupaten/kota berdasarkan komoditas.'],rhprice:['Harga RH','Previous, Current, RH, dan Keterangan dari sheet RH web.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
-function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','marketTypeFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));document.querySelectorAll('.change-band-check').forEach(el=>el.addEventListener('change',applyFilters));let filterTimer;const liveFilter=()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,120)};$('commodityFilter').addEventListener('input',()=>{updateQualityDatalist();liveFilter()});$('commodityFilter').addEventListener('change',()=>{updateQualityDatalist();applyFilters()});$('qualityFilter').addEventListener('input',liveFilter);$('qualityFilter').addEventListener('change',applyFilters);$('searchFilter').addEventListener('input',liveFilter);$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('periodCategoryFilter').addEventListener('change',()=>{state.periodPage=1;renderPeriod()});$('periodPageSize').addEventListener('change',e=>{state.periodPageSize=e.target.value==='all'?'all':Number(e.target.value);state.periodPage=1;renderPeriod()});$('periodRawOrderBtn').onclick=resetPeriodRawOrder;$('periodExportBtn').onclick=()=>exportEvaluation('period');$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendPageSize').addEventListener('change',e=>{state.trendPageSize=e.target.value==='all'?'all':Number(e.target.value);state.trendPage=1;renderTrend()});$('trendRawOrderBtn').onclick=resetTrendRawOrder;$('trendExportBtn').onclick=()=>exportEvaluation('trend');$('trendRefreshBtn').onclick=loadAll;$('matrixExportBtn').onclick=exportMatrixView;$('matrixRawOrderBtn').onclick=resetMatrixOrder;bindPeriodSort();bindTrendSort();bindMatrixSort();bindRhSort();['rhKabFilter','rhConditionFilter'].forEach(id=>$(id).addEventListener('change',refreshRhViews));document.querySelectorAll('.rh-category-check').forEach(el=>el.addEventListener('change',refreshRhViews));let rhTimer;const rhLive=()=>{clearTimeout(rhTimer);rhTimer=setTimeout(refreshRhViews,120)};$('rhCommodityFilter').addEventListener('input',rhLive);$('rhCommodityFilter').addEventListener('change',refreshRhViews);$('rhSearchFilter').addEventListener('input',rhLive);$('rhPageSize').addEventListener('change',e=>{state.rhPageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPage=1;renderRh()});$('rhPricePageSize').addEventListener('change',e=>{state.rhPricePageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPricePage=1;renderRhPrice()});$('rhPrevPage').onclick=()=>{if(state.rhPage>1){state.rhPage--;renderRh()}};$('rhNextPage').onclick=()=>{state.rhPage++;renderRh()};$('rhPricePrevPage').onclick=()=>{if(state.rhPricePage>1){state.rhPricePage--;renderRhPrice()}};$('rhPriceNextPage').onclick=()=>{state.rhPricePage++;renderRhPrice()};$('rhRawOrderBtn').onclick=resetRhOrder;$('rhPriceRawOrderBtn').onclick=resetRhPriceOrder;$('rhExportBtn').onclick=()=>exportRh('rh');$('rhPriceExportBtn').onclick=()=>exportRh('rhprice');if(logged)loadAll()}
+function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','marketTypeFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));document.querySelectorAll('.change-band-check').forEach(el=>el.addEventListener('change',applyFilters));let filterTimer;const liveFilter=()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,120)};$('commodityFilter').addEventListener('input',()=>{updateQualityDatalist();liveFilter()});$('commodityFilter').addEventListener('change',()=>{updateQualityDatalist();applyFilters()});$('qualityFilter').addEventListener('input',liveFilter);$('qualityFilter').addEventListener('change',applyFilters);$('searchFilter').addEventListener('input',liveFilter);$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('periodCategoryFilter').addEventListener('change',()=>{state.periodPage=1;renderPeriod()});$('periodPageSize').addEventListener('change',e=>{state.periodPageSize=e.target.value==='all'?'all':Number(e.target.value);state.periodPage=1;renderPeriod()});$('periodRawOrderBtn').onclick=resetPeriodRawOrder;$('periodExportBtn').onclick=()=>exportEvaluation('period');$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendPageSize').addEventListener('change',e=>{state.trendPageSize=e.target.value==='all'?'all':Number(e.target.value);state.trendPage=1;renderTrend()});$('trendRawOrderBtn').onclick=resetTrendRawOrder;$('trendExportBtn').onclick=()=>exportEvaluation('trend');$('trendRefreshBtn').onclick=loadAll;$('matrixExportBtn').onclick=exportMatrixView;$('matrixRawOrderBtn').onclick=resetMatrixOrder;bindPeriodSort();bindTrendSort();bindMatrixSort();bindRhSort();['rhKabFilter','rhConditionFilter'].forEach(id=>$(id).addEventListener('change',refreshRhViews));document.querySelectorAll('.rh-category-check').forEach(el=>el.addEventListener('change',refreshRhViews));let rhTimer;const rhLive=()=>{clearTimeout(rhTimer);rhTimer=setTimeout(refreshRhViews,120)};$('rhCommodityFilter').addEventListener('input',rhLive);$('rhCommodityFilter').addEventListener('change',refreshRhViews);$('rhSearchFilter').addEventListener('input',rhLive);$('rhPageSize').addEventListener('change',e=>{state.rhPageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPage=1;renderRh()});$('rhPricePageSize').addEventListener('change',e=>{state.rhPricePageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPricePage=1;renderRhPrice()});$('rhPrevPage').onclick=()=>{if(state.rhPage>1){state.rhPage--;renderRh()}};$('rhNextPage').onclick=()=>{state.rhPage++;renderRh()};$('rhPricePrevPage').onclick=()=>{if(state.rhPricePage>1){state.rhPricePage--;renderRhPrice()}};$('rhPriceNextPage').onclick=()=>{state.rhPricePage++;renderRhPrice()};$('rhRawOrderBtn').onclick=resetRhOrder;$('rhPriceRawOrderBtn').onclick=resetRhPriceOrder;$('rhExportBtn').onclick=()=>exportRh('rh');$('rhPriceExportBtn').onclick=()=>exportRh('rhprice');startRhAutoSync();if(logged)loadAll()}
 document.addEventListener('DOMContentLoaded',init);

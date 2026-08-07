@@ -170,3 +170,12 @@ Karena Keterangan RH ditulis ke kolom H, **Code.gs berubah**. Tempel Code.gs ter
 - Nama file download sekarang menyertakan tanggal dan waktu sampai menit, contoh: `evaluasi-bulanan-mingguan-2026-08-07_14-51.xlsx`.
 - Kolom Keterangan pada Excel/CSV mengambil nilai terbaru yang sedang tampil/ditulis di web. Jika Keterangan sudah disimpan ke spreadsheet, nilai pada state juga ikut diperbarui.
 - Tombol Simpan sekarang mengambil textarea pada baris yang sama sehingga aman meskipun baris yang sama tampil pada lebih dari satu menu.
+
+
+## Sinkronisasi dua arah Keterangan RH
+
+- Sheet `RH web` kolom **H** menjadi sumber Keterangan untuk **Tabulasi RH** dan **Harga RH**.
+- Jika kolom H diubah langsung di Google Sheets, web mengecek ulang data RH otomatis setiap **10 detik** saat salah satu menu RH sedang dibuka. Tombol **Muat ulang** tetap dapat digunakan untuk sinkronisasi manual seluruh dashboard.
+- Jika Keterangan diubah dari web lalu tombol **Simpan** ditekan, Apps Script menulis ke baris yang sama pada kolom H dan web membaca kembali data RH sesudah penyimpanan.
+- Pada Tabulasi RH, setiap kabupaten/kota mempunyai textarea dan tombol Simpan sendiri. Tombol sekarang selalu membaca textarea pada kotak kabupaten/kota yang sama, sehingga catatan 1902/1903/1906/1971 tidak tertukar.
+- Saat pengguna sedang mengetik di textarea RH, sinkronisasi otomatis tidak akan merender ulang tabel agar teks yang sedang diketik tidak hilang.
