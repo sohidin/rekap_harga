@@ -1,6 +1,6 @@
 const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
-  appsScriptUrl:'https://script.google.com/macros/s/AKfycbwwTsKCYmoKjgsH-QOpHDpsv7FCXhg_HA8pBPkCxR2sST4rxPXwSIbedn8S6A8hBqGrww/exec',
+  appsScriptUrl:'https://script.google.com/macros/s/AKfycbwfGedcMHzipHgQ_iQxCiaDDy6G8iEgRBwEYR9PdoDblsvlCqhl2AlUbsE_Q7phzu1R1g/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25,
   rhSyncIntervalMs:2000
@@ -178,10 +178,19 @@ async function saveNote(btn){
   try{
     // Memakai JSONP GET agar GitHub Pages menerima respons sukses/gagal nyata
     // dari Apps Script. Pesan sukses hanya muncul setelah setValue + flush selesai.
+    const rhItem=sheet==='RH web' ? state.rhAll.find(x=>x.rowNumber===row) : null;
     const result=await gasJsonp({
-      action:'updateNote', sheet:String(sheet), row:String(row), note:String(note),
-      token:'harga1900', ts:String(Date.now())
-    });
+      action:'updateNote',
+      sheet:String(sheet),
+      row:String(row),
+      note:String(note),
+      clear:note===''?'1':'0',
+      kab:rhItem?String(rhItem.kab||''):'',
+      commodityCode:rhItem?String(rhItem.commodityCode||''):'',
+      commodity:rhItem?String(rhItem.commodity||''):'',
+      token:'harga1900',
+      ts:String(Date.now())
+    },15000);
     if(!result||result.ok!==true)throw new Error(result&&result.message?result.message:'Apps Script tidak mengonfirmasi penyimpanan.');
 
     const item=state.all.find(x=>x.sheet===sheet&&x.rowNumber===row)||state.rhAll.find(x=>x.sheet===sheet&&x.rowNumber===row);
@@ -189,12 +198,15 @@ async function saveNote(btn){
     if(noteEl)noteEl.dataset.savedValue=note;
 
     if(sheet==='RH web'){
-      state.rhAll.filter(x=>x.rowNumber===row).forEach(x=>x.note=note);
+      const resolvedRow=Number(result.row||row);
+      state.rhAll.filter(x=>x.rowNumber===row||x.rowNumber===resolvedRow).forEach(x=>{x.note=note;if(x.rowNumber===row&&resolvedRow!==row)x.rowNumber=resolvedRow});
       updateVisibleRhNote(row,note);
-      // Verifikasi ringan: baca kembali kolom H sesudah server menyatakan sukses.
-      setTimeout(()=>syncRhNotesFast(true),250);
+      if(resolvedRow!==row)updateVisibleRhNote(resolvedRow,note);
+      // Verifikasi segera dari endpoint pembaca kolom H. Jika ada perubahan dari spreadsheet,
+      // state lokal akan dikoreksi tanpa perlu reload seluruh halaman.
+      setTimeout(()=>syncRhNotesFast(true),200);
     }
-    showStatus(`Keterangan benar-benar tersimpan ke ${result.cell||sheet+' baris '+row}.`,'success');
+    showStatus(`Keterangan tersimpan dan terverifikasi di ${result.cell||sheet+' baris '+(result.row||row)}.`,'success');
   }catch(e){
     showStatus(`Gagal menyimpan keterangan: ${e.message}`,'error');
   }finally{

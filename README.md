@@ -190,3 +190,8 @@ Karena `Code.gs` berubah, lakukan **Deploy > Manage deployments > Edit > New ver
 
 ## Perbaikan penyimpanan RH dari web
 Versi ini mengubah penyimpanan Keterangan menjadi request JSONP yang menunggu konfirmasi nyata dari Apps Script. Pesan berhasil baru tampil setelah Apps Script menulis dan membaca kembali sel tujuan. Karena `Code.gs` berubah, lakukan **Deploy > Manage deployments > Edit > New version > Deploy**. Pastikan URL `/exec` deployment yang sama tetap dipasang di `CONFIG.appsScriptUrl` pada `script.js`.
+
+## Perbaikan sinkronisasi RH web -> Spreadsheet (versi final)
+Versi ini tidak lagi hanya mengandalkan nomor baris dari CSV. Untuk sheet `RH web`, saat tombol Simpan ditekan browser mengirim nomor baris sekaligus identitas `Wilayah (A) + Kode Komoditas (C) + Komoditas (D)`. Apps Script memvalidasi baris tersebut dan, bila nomor baris meleset, mencari baris yang benar sebelum menulis `Keterangan` ke kolom H. Mengosongkan textarea lalu klik Simpan juga diperlakukan sebagai update yang sah dan akan menjalankan `clearContent()` pada sel H.
+
+Karena `Code.gs` berubah, lakukan deploy ulang sebagai **New version** pada deployment Web App yang sama. Setelah itu upload `script.js` terbaru ke GitHub dan pastikan `CONFIG.appsScriptUrl` tetap berisi URL `/exec` Anda.
