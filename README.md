@@ -123,3 +123,16 @@ Pemetaan penulisan:
 - Evaluasi Bulanan dan Evaluasi Mingguan memiliki tombol **Urutan Raw Data**.
 - Tombol tersebut mengurutkan kembali data menurut urutan sheet sumber dan nomor baris asli pada spreadsheet.
 - Saat periode `Tampilkan Semua` dipilih, urutan sheet adalah Mingguan, Dwi Mingguan, lalu Bulanan; di dalam setiap sheet urutan mengikuti nomor baris asli.
+
+
+## Ringkasan Evaluasi Bulanan
+Evaluasi Bulanan menampilkan sembilan kartu distribusi kelompok perubahan (tetap, empat tingkat kenaikan, dan empat tingkat penurunan). Angka kartu mengikuti filter utama yang aktif, sedangkan filter Kelompok Perubahan tetap digunakan untuk menyaring tabel.
+
+
+## Pembaruan analisis Komoditas × Kualitas dan ekspor
+
+- Evaluasi Bulanan dan Evaluasi Mingguan menampilkan **Kode Komoditas**.
+- Kolom **Keterangan** pada Evaluasi Mingguan dapat di-sort seperti Evaluasi Bulanan.
+- Kedua evaluasi mempunyai ekspor **Excel, CSV, PDF, dan PNG**. Excel/CSV mengekspor seluruh data sesuai filter dan sort aktif; PDF/PNG menangkap halaman evaluasi yang sedang tampil.
+- Menu Komoditas sekarang menggunakan dua tingkat pemilihan: **Komoditas → Kualitas**. Harga antar-kualitas tidak dicampur pada KPI utama.
+- Ringkasan Komoditas menampilkan rata-rata Prev/Current gabungan seluruh kabupaten/kota, ringkasan semua kualitas, rata-rata harga per kabupaten/kota, serta minimum–maksimum Current per kabupaten/kota.
