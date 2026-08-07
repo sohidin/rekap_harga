@@ -1,6 +1,6 @@
 const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
-  appsScriptUrl:'https://script.google.com/macros/s/AKfycbwe2FvCpkYpEiXhWyMW2BXuqNB9TcJaNq9MqigpNk_UjKda8CA5VyGPnpnPmD0nBcrtWg/exec',
+  appsScriptUrl:'https://script.google.com/macros/s/AKfycbwwTsKCYmoKjgsH-QOpHDpsv7FCXhg_HA8pBPkCxR2sST4rxPXwSIbedn8S6A8hBqGrww/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25,
   rhSyncIntervalMs:2000
@@ -176,49 +176,47 @@ async function saveNote(btn){
   btn.textContent='Menyimpan...';
 
   try{
-    // Submit form ke iframe tersembunyi. Browser mengizinkan POST lintas domain
-    // seperti form biasa, sehingga lebih konsisten untuk GitHub Pages -> Apps Script.
-    await postToAppsScript({
+    // Memakai JSONP GET agar GitHub Pages menerima respons sukses/gagal nyata
+    // dari Apps Script. Pesan sukses hanya muncul setelah setValue + flush selesai.
+    const result=await gasJsonp({
       action:'updateNote', sheet:String(sheet), row:String(row), note:String(note),
       token:'harga1900', ts:String(Date.now())
     });
+    if(!result||result.ok!==true)throw new Error(result&&result.message?result.message:'Apps Script tidak mengonfirmasi penyimpanan.');
 
     const item=state.all.find(x=>x.sheet===sheet&&x.rowNumber===row)||state.rhAll.find(x=>x.sheet===sheet&&x.rowNumber===row);
     if(item)item.note=note;
     if(noteEl)noteEl.dataset.savedValue=note;
 
-    // Satu sumber state untuk kedua tampilan RH agar perubahan langsung terlihat
-    // tanpa menunggu pembacaan ulang spreadsheet.
     if(sheet==='RH web'){
       state.rhAll.filter(x=>x.rowNumber===row).forEach(x=>x.note=note);
       updateVisibleRhNote(row,note);
-      // Verifikasi cepat dari spreadsheet sesaat setelah POST.
-      setTimeout(()=>syncRhNotesFast(true),350);
-      setTimeout(()=>syncRhNotesFast(true),1100);
+      // Verifikasi ringan: baca kembali kolom H sesudah server menyatakan sukses.
+      setTimeout(()=>syncRhNotesFast(true),250);
     }
-    showStatus(`Keterangan tersimpan ke ${sheet}, baris ${row}.`,'success');
+    showStatus(`Keterangan benar-benar tersimpan ke ${result.cell||sheet+' baris '+row}.`,'success');
   }catch(e){
-    showStatus(`Gagal mengirim keterangan: ${e.message}`,'error');
+    showStatus(`Gagal menyimpan keterangan: ${e.message}`,'error');
   }finally{
     btn.disabled=false;
     btn.classList.remove('saving');
     btn.textContent='Simpan';
   }
 }
-function postToAppsScript(fields){
+function gasJsonp(params,timeoutMs=10000){
   return new Promise((resolve,reject)=>{
-    const url=String(CONFIG.appsScriptUrl||'').trim();
-    const iframe=document.createElement('iframe');
-    const name='gas_post_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    iframe.name=name; iframe.style.display='none'; iframe.setAttribute('aria-hidden','true');
-    const form=document.createElement('form');
-    form.method='POST'; form.action=url; form.target=name; form.style.display='none';
-    Object.entries(fields).forEach(([k,v])=>{const input=document.createElement('input');input.type='hidden';input.name=k;input.value=String(v??'');form.appendChild(input)});
-    document.body.append(iframe,form);
-    let done=false;
-    const finish=()=>{if(done)return;done=true;setTimeout(()=>{form.remove();iframe.remove()},50);resolve()};
-    iframe.addEventListener('load',()=>setTimeout(finish,80),{once:true});
-    try{form.submit();setTimeout(finish,900)}catch(err){form.remove();iframe.remove();reject(err)}
+    const base=String(CONFIG.appsScriptUrl||'').trim();
+    const cb='__gas_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    let timer;
+    const cleanup=()=>{clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}script.remove()};
+    window[cb]=(data)=>{cleanup();resolve(data)};
+    const qs=new URLSearchParams({...params,callback:cb});
+    script.src=base+'?'+qs.toString();
+    script.async=true;
+    script.onerror=()=>{cleanup();reject(new Error('Tidak dapat menghubungi Web App Apps Script.'))};
+    timer=setTimeout(()=>{cleanup();reject(new Error('Apps Script tidak memberi respons dalam '+Math.round(timeoutMs/1000)+' detik.'))},timeoutMs);
+    document.head.appendChild(script);
   });
 }
 function updateVisibleRhNote(row,note){

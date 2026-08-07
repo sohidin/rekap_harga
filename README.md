@@ -186,3 +186,7 @@ Karena Keterangan RH ditulis ke kolom H, **Code.gs berubah**. Tempel Code.gs ter
 Versi ini mengubah sinkronisasi Keterangan pada sheet **RH web** agar terasa seperti Evaluasi Bulanan/Mingguan. Simpan dari web dikirim melalui form POST langsung ke Apps Script dan state Tabulasi RH + Harga RH diperbarui saat itu juga. Perubahan yang diketik langsung di spreadsheet dibaca melalui endpoint Apps Script ringan setiap sekitar **2 detik**, sehingga tidak menunggu refresh CSV seluruh sheet.
 
 Karena `Code.gs` berubah, lakukan **Deploy > Manage deployments > Edit > New version > Deploy**. Pertahankan URL `/exec` deployment yang sama, lalu masukkan URL itu kembali ke `CONFIG.appsScriptUrl` pada `script.js`.
+
+
+## Perbaikan penyimpanan RH dari web
+Versi ini mengubah penyimpanan Keterangan menjadi request JSONP yang menunggu konfirmasi nyata dari Apps Script. Pesan berhasil baru tampil setelah Apps Script menulis dan membaca kembali sel tujuan. Karena `Code.gs` berubah, lakukan **Deploy > Manage deployments > Edit > New version > Deploy**. Pastikan URL `/exec` deployment yang sama tetap dipasang di `CONFIG.appsScriptUrl` pada `script.js`.

@@ -12,8 +12,18 @@ function doGet(e) {
   const p = (e && e.parameter) || {};
   const action = String(p.action || '');
 
-  // Endpoint ringan khusus Keterangan RH. Dipakai web untuk sinkron hampir
-  // real-time tanpa membaca ulang seluruh sheet melalui CSV/gviz.
+  // Tulis Keterangan melalui JSONP. Ini sengaja didukung lewat GET agar
+  // GitHub Pages dapat menerima konfirmasi sukses tanpa masalah CORS.
+  if (action === 'updateNote') {
+    try {
+      const out = updateNote_(p);
+      return jsonOrJsonp(out, p.callback);
+    } catch (err) {
+      return jsonOrJsonp({ok:false,message:String(err && err.message ? err.message : err)}, p.callback);
+    }
+  }
+
+  // Endpoint ringan khusus Keterangan RH untuk sinkron spreadsheet -> web.
   if (action === 'getRhNotes') {
     try {
       if (String(p.token || '') !== WRITE_TOKEN) throw new Error('Token tidak valid.');
@@ -37,15 +47,22 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const lock = LockService.getScriptLock();
   try {
-    lock.waitLock(10000);
     let data = e && e.parameter ? e.parameter : {};
     if (e && e.postData && e.postData.contents &&
         String(e.postData.type || '').toLowerCase().includes('application/json')) {
       data = JSON.parse(e.postData.contents || '{}');
     }
+    return jsonOutput(updateNote_(data));
+  } catch (err) {
+    return jsonOutput({ok:false,message:String(err && err.message ? err.message : err)});
+  }
+}
 
+function updateNote_(data) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
     const token = String(data.token || '');
     const action = String(data.action || '');
     const sheetName = String(data.sheet || '');
@@ -63,12 +80,15 @@ function doPost(e) {
     if (row > sheet.getMaxRows()) throw new Error('Baris melebihi jumlah baris sheet.');
 
     const column = ALLOWED_SHEETS[sheetName];
-    sheet.getRange(row, column).setValue(note);
+    const cell = sheet.getRange(row, column);
+    cell.setValue(note);
     SpreadsheetApp.flush();
 
-    return jsonOutput({ok:true,sheet:sheetName,row:row,column:column,cell:sheet.getRange(row,column).getA1Notation(),note:note});
-  } catch (err) {
-    return jsonOutput({ok:false,message:String(err && err.message ? err.message : err)});
+    // Baca kembali sel yang sama sebagai verifikasi server-side.
+    const saved = String(cell.getDisplayValue() || '');
+    if (saved !== note) throw new Error('Verifikasi penyimpanan gagal pada ' + cell.getA1Notation() + '.');
+
+    return {ok:true,sheet:sheetName,row:row,column:column,cell:cell.getA1Notation(),note:saved,serverTime:new Date().toISOString()};
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
