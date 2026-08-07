@@ -144,3 +144,7 @@ Evaluasi Bulanan menampilkan sembilan kartu distribusi kelompok perubahan (tetap
 - Menu Komoditas menggunakan filter: Periode, Wilayah, Komoditas, Kualitas, Jenis Pasar, dan Pencarian.
 - Ringkasan Seluruh Kualitas memiliki **Jumlah Wilayah** dan daftar wilayah tempat kualitas ditemukan.
 - Menu **Matriks Komoditas** menggantikan Rekap Data dan merangkum seluruh Komoditas × Kualitas × Kabupaten/Kota. Tabel dapat di-sort dan di-download Excel, CSV, PDF, atau PNG.
+
+
+## Filter besar perubahan (multi-select)
+Evaluasi Bulanan dan Evaluasi Mingguan memiliki filter besar perubahan yang dapat dipilih lebih dari satu: ±20–49,99%, ±50–99,99%, dan ±100% atau lebih. Jika tidak ada pilihan, semua data ditampilkan. Pada Evaluasi Mingguan, sebuah baris lolos jika minimal satu perubahan berurutan masuk ke kelompok yang dipilih.

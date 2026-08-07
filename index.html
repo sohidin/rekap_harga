@@ -60,7 +60,12 @@
       <label>Kualitas<div class="searchable-combo"><input id="qualityFilter" list="qualityFilterList" placeholder="Semua kualitas" autocomplete="off"><datalist id="qualityFilterList"></datalist></div></label>
       <label>Jenis pasar<select id="marketTypeFilter"><option value="">Semua jenis pasar</option></select></label>
       <label class="search">Pencarian<input id="searchFilter" type="search" placeholder="Pasar, responden, kualitas, keterangan"></label>
-      <label class="check-filter"><input id="extremeOnly" type="checkbox"> Hanya perubahan ≤−20% atau ≥+20% <span class="filter-hint">(bawaan: tampilkan semua)</span></label>
+      <div class="change-band-filter" role="group" aria-label="Filter besar perubahan">
+        <span class="change-band-title">Filter besar perubahan <small>(bisa pilih lebih dari satu; tanpa pilihan = tampilkan semua)</small></span>
+        <label class="change-band-chip"><input id="changeBand20" class="change-band-check" type="checkbox" value="20"> <span>±20–49,99%</span></label>
+        <label class="change-band-chip"><input id="changeBand50" class="change-band-check" type="checkbox" value="50"> <span>±50–99,99%</span></label>
+        <label class="change-band-chip"><input id="changeBand100" class="change-band-check" type="checkbox" value="100"> <span>±100% atau lebih</span></label>
+      </div>
     </section>
 
     <section id="view-dashboard" class="view active-view">
