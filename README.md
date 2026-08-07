@@ -201,3 +201,6 @@ Karena `Code.gs` berubah, lakukan deploy ulang sebagai **New version** pada depl
 - Komoditas/Kualitas pada menu non-RH kini memakai searchable dropdown kustom: klik field atau tombol panah untuk menampilkan seluruh pilihan meskipun nilai sebelumnya masih terisi.
 - Komoditas pada Tabulasi RH/Harga RH memakai mekanisme yang sama.
 - Filter RH memakai interval nilai RH: =100, >100–110, >110–120, >120–130, >130–140, >140, 90–<100, 80–<90, 70–<80, 60–<70, dan <60.
+
+## Perbaikan Harga RH – Simpan Keterangan
+Versi ini memperbaiki benturan ID textarea antar menu. `Harga RH` sekarang memakai ID textarea unik (`note-rhprice-RH_web-<baris>`), sehingga tombol Simpan selalu mengambil Keterangan dari baris Harga RH yang sedang diedit. Evaluasi Bulanan/Mingguan juga dikembalikan menulis ke sheet sumber masing-masing, bukan `RH web`.
