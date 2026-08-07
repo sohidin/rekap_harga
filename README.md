@@ -204,3 +204,9 @@ Karena `Code.gs` berubah, lakukan deploy ulang sebagai **New version** pada depl
 
 ## Perbaikan Harga RH – Simpan Keterangan
 Versi ini memperbaiki benturan ID textarea antar menu. `Harga RH` sekarang memakai ID textarea unik (`note-rhprice-RH_web-<baris>`), sehingga tombol Simpan selalu mengambil Keterangan dari baris Harga RH yang sedang diedit. Evaluasi Bulanan/Mingguan juga dikembalikan menulis ke sheet sumber masing-masing, bukan `RH web`.
+
+
+## Perbaikan filter Harga RH
+- Filter **Kondisi Antarwilayah** hanya tampil pada **Tabulasi RH**.
+- Pada **Harga RH**, data tetap berbentuk baris per kabupaten/kota (Previous, Current, RH), sehingga filter antarwilayah tidak digunakan.
+- Filter Wilayah, Komoditas, klasifikasi nilai RH, pencarian, sorting, jumlah baris, download, dan Keterangan tetap tersedia.

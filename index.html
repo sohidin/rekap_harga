@@ -127,7 +127,7 @@
     <section id="rhFilters" class="filters rh-filters hidden">
       <label>Wilayah<select id="rhKabFilter"><option value="">Semua wilayah</option><option value="1902">1902</option><option value="1903">1903</option><option value="1906">1906</option><option value="1971">1971</option></select></label>
       <label>Komoditas<div class="searchable-combo"><input id="rhCommodityFilter" list="rhCommodityFilterList" placeholder="Cari nama komoditas (kolom D)" autocomplete="off"><datalist id="rhCommodityFilterList"></datalist></div></label>
-      <label>Kondisi Antarwilayah<select id="rhConditionFilter"><option value="">Semua kondisi</option><option value="outlier">Ada arah berbeda sendiri</option><option value="mixed">Campuran &gt;100 dan &lt;100</option><option value="all-up">Seluruh RH &gt;100</option><option value="all-down">Seluruh RH &lt;100</option><option value="has-100">Ada RH =100</option></select></label>
+      <label id="rhConditionFilterWrap">Kondisi Antarwilayah<select id="rhConditionFilter"><option value="">Semua kondisi</option><option value="outlier">Ada arah berbeda sendiri</option><option value="mixed">Campuran &gt;100 dan &lt;100</option><option value="all-up">Seluruh RH &gt;100</option><option value="all-down">Seluruh RH &lt;100</option><option value="has-100">Ada RH =100</option></select></label>
       <label class="search">Pencarian<input id="rhSearchFilter" type="search" placeholder="Kode, komoditas, keterangan"></label>
       <div class="rh-class-filter"><span class="rh-filter-title">Klasifikasi nilai RH <small>(bisa pilih lebih dari satu; tanpa pilihan = semua)</small></span><div class="rh-filter-chips">
         <label class="filter-chip"><input type="checkbox" class="rh-category-check" value="eq100"> RH = 100</label>
@@ -182,6 +182,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="script.js?v=20260807-combo-rh2"></script>
+<script src="script.js?v=20260807-rhprice-simplefilter"></script>
 </body>
 </html>
