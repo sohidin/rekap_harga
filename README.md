@@ -158,3 +158,15 @@ Versi ini memastikan lima pilihan filter tampil di Evaluasi Bulanan dan Evaluasi
 Dashboard kini membaca sheet **RH web** dengan pemetaan: A=Kabupaten/Kota, B=Kode Komoditas, C=Komoditas, D=Kualitas, E=Previous, F=Current, G=RH, H=Keterangan. Tabulasi RH mempivot kode komoditas ke kolom wilayah 1902/1903/1906/1971. Nilai >100 dan <100 diberi warna berbeda; bila hanya satu wilayah bergerak berlawanan arah terhadap mayoritas, sel tersebut diberi highlight ungu.
 
 Karena Keterangan RH ditulis ke kolom H, **Code.gs berubah**. Tempel Code.gs terbaru ke Apps Script lalu lakukan **Deploy > Manage deployments > Edit > New version > Deploy**. URL /exec tetap dapat digunakan jika deployment yang sama diperbarui.
+
+
+## Koreksi modul RH
+- RH web: Wilayah=A, Kode Komoditas=C, Nama Komoditas=D, Previous=E, Current=F, RH=G, Keterangan=H.
+- Tidak ada kolom Kualitas pada modul RH.
+- Tabulasi RH dan Harga RH memiliki filter klasifikasi perubahan RH yang dapat dipilih lebih dari satu.
+- Jumlah baris memiliki opsi 10/25/50/100/250/500/Semua dan informasi jumlah baris yang benar-benar tampil.
+
+## Perbaikan ekspor Evaluasi Bulanan dan Mingguan
+- Nama file download sekarang menyertakan tanggal dan waktu sampai menit, contoh: `evaluasi-bulanan-mingguan-2026-08-07_14-51.xlsx`.
+- Kolom Keterangan pada Excel/CSV mengambil nilai terbaru yang sedang tampil/ditulis di web. Jika Keterangan sudah disimpan ke spreadsheet, nilai pada state juga ikut diperbarui.
+- Tombol Simpan sekarang mengambil textarea pada baris yang sama sehingga aman meskipun baris yang sama tampil pada lebih dari satu menu.
