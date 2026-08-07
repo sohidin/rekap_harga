@@ -143,4 +143,4 @@ Evaluasi Bulanan menampilkan sembilan kartu distribusi kelompok perubahan (tetap
 - Filter Komoditas dan Kualitas menggunakan kotak pencarian dengan saran (datalist), sehingga dapat diketik untuk mencari.
 - Menu Komoditas menggunakan filter: Periode, Wilayah, Komoditas, Kualitas, Jenis Pasar, dan Pencarian.
 - Ringkasan Seluruh Kualitas memiliki **Jumlah Wilayah** dan daftar wilayah tempat kualitas ditemukan.
-- Menu **Matriks Harga** menggantikan Rekap Data dan merangkum seluruh Komoditas × Kualitas × Kabupaten/Kota. Tabel dapat di-sort dan di-download Excel, CSV, PDF, atau PNG.
+- Menu **Matriks Komoditas** menggantikan Rekap Data dan merangkum seluruh Komoditas × Kualitas × Kabupaten/Kota. Tabel dapat di-sort dan di-download Excel, CSV, PDF, atau PNG.
