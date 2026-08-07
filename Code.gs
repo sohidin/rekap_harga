@@ -5,7 +5,8 @@ const WRITE_TOKEN = 'harga1900';
 const ALLOWED_SHEETS = {
   'Mingguan': 25,      // Kolom Y
   'Dwi Mingguan': 19,  // Kolom S
-  'bulanan': 15        // Kolom O
+  'bulanan': 15,       // Kolom O
+  'RH web': 8           // Kolom H
 };
 
 function doGet(e) {

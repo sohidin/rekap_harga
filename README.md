@@ -152,3 +152,9 @@ Evaluasi Bulanan dan Evaluasi Mingguan memiliki filter besar perubahan yang dapa
 
 ## Koreksi tampilan filter 5 kategori
 Versi ini memastikan lima pilihan filter tampil di Evaluasi Bulanan dan Evaluasi Mingguan: Tidak ada perubahan harga; >0–19,99%; ±20–49,99%; ±50–99,99%; dan ±100% atau lebih. `index.html` juga menggunakan cache-busting pada CSS/JS agar GitHub Pages/browser tidak mempertahankan tampilan versi lama. Setelah upload, lakukan hard refresh (Ctrl+F5).
+
+
+## Modul RH (baru)
+Dashboard kini membaca sheet **RH web** dengan pemetaan: A=Kabupaten/Kota, B=Kode Komoditas, C=Komoditas, D=Kualitas, E=Previous, F=Current, G=RH, H=Keterangan. Tabulasi RH mempivot kode komoditas ke kolom wilayah 1902/1903/1906/1971. Nilai >100 dan <100 diberi warna berbeda; bila hanya satu wilayah bergerak berlawanan arah terhadap mayoritas, sel tersebut diberi highlight ungu.
+
+Karena Keterangan RH ditulis ke kolom H, **Code.gs berubah**. Tempel Code.gs terbaru ke Apps Script lalu lakukan **Deploy > Manage deployments > Edit > New version > Deploy**. URL /exec tetap dapat digunakan jika deployment yang sama diperbarui.
