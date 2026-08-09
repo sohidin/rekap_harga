@@ -216,3 +216,8 @@ Versi ini memperbaiki benturan ID textarea antar menu. `Harga RH` sekarang memak
 - `Minimal 1 Minggu Tetap` menampilkan baris yang memiliki minimal satu perpindahan minggu dengan harga tetap (0%).
 - `Semua Minggu Tidak Berubah` tampil paling kiri pada menu Evaluasi Mingguan dan hanya menampilkan baris yang seluruh perpindahan harga validnya tetap (0%).
 - Filter besar perubahan lain tetap dapat dikombinasikan.
+
+
+## Revisi terbaru
+- Evaluasi Bulanan: filter `Semua Minggu Tidak Berubah` tidak ditampilkan dan label `Minimal 1 Minggu Tetap` menjadi `Tidak ada perubahan harga` khusus pada menu ini. Evaluasi Mingguan tetap memakai label/fitur sebelumnya.
+- Menu Komoditas: baris pada tabel Ringkasan seluruh kualitas sekarang dapat diklik untuk mengubah kualitas detail. Statistik wilayah, KPI, dan grafik kualitas terpilih langsung mengikuti baris yang diklik tanpa harus mengubah filter Kualitas global.
