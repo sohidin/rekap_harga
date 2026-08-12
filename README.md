@@ -225,3 +225,9 @@ Versi ini memperbaiki benturan ID textarea antar menu. `Harga RH` sekarang memak
 
 ## Periode Data
 Papan **PERIODE DATA** di kanan atas dapat diedit dengan tanggal dan jam (WIB). Nilai disimpan global melalui Apps Script PropertiesService sehingga sama untuk seluruh pengguna dan tetap tersimpan setelah refresh. Deploy ulang `Code.gs` sebagai **New version**.
+
+
+## Fix penyimpanan Periode Data
+Versi ini menyimpan Periode Data melalui `POST` ke Apps Script lalu melakukan verifikasi ulang melalui `getDataPeriod`. Ini menghindari timeout JSONP saat melakukan operasi tulis.
+
+**Wajib:** ganti `Code.gs`, lalu Deploy → Manage deployments → Edit → New version → Deploy. Setelah itu timpa `script.js` di GitHub.

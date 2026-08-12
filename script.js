@@ -1,6 +1,6 @@
 const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
-  appsScriptUrl:'https://script.google.com/macros/s/AKfycbwfGedcMHzipHgQ_iQxCiaDDy6G8iEgRBwEYR9PdoDblsvlCqhl2AlUbsE_Q7phzu1R1g/exec',
+  appsScriptUrl:'https://script.google.com/macros/s/AKfycbzPEBXGe73vNKVfiBD60vJt9qbXOmcjXzT_Xrljb96GJVN09RsPl63poKAPPdCN0udIHA/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25,
   rhSyncIntervalMs:2000
@@ -468,7 +468,7 @@ function jsonpAppsScript(params,timeoutMs=5000){
     const script=document.createElement('script');
     let finished=false;
     const cleanup=()=>{try{delete window[callback]}catch(_){window[callback]=undefined}script.remove()};
-    const timer=setTimeout(()=>{if(finished)return;finished=true;cleanup();reject(new Error('Timeout sinkronisasi RH'))},timeoutMs);
+    const timer=setTimeout(()=>{if(finished)return;finished=true;cleanup();reject(new Error('Timeout komunikasi dengan Apps Script'))},timeoutMs);
     window[callback]=data=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();resolve(data)};
     const qs=new URLSearchParams({...params,callback,ts:String(Date.now())});
     script.src=base+'?'+qs.toString();
@@ -553,17 +553,108 @@ function openDataPeriodModal(){
   setTimeout(()=>$('dataPeriodInput').focus(),30);
 }
 function closeDataPeriodModal(){$('dataPeriodModal')?.classList.add('hidden')}
+function postDataPeriod(value){
+  return new Promise((resolve,reject)=>{
+    const base=String(CONFIG.appsScriptUrl||'').trim();
+    if(!base||base.includes('PASTE_URL')||!base.endsWith('/exec')){
+      reject(new Error('URL Apps Script belum diatur'));
+      return;
+    }
+
+    const frameName='periodSaveFrame_'+Date.now();
+    const iframe=document.createElement('iframe');
+    iframe.name=frameName;
+    iframe.style.display='none';
+    document.body.appendChild(iframe);
+
+    const form=document.createElement('form');
+    form.method='POST';
+    form.action=base;
+    form.target=frameName;
+    form.style.display='none';
+
+    const fields={
+      action:'updateDataPeriod',
+      token:DATA_PERIOD_TOKEN,
+      value:value
+    };
+    Object.entries(fields).forEach(([name,val])=>{
+      const input=document.createElement('input');
+      input.type='hidden';
+      input.name=name;
+      input.value=String(val);
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+
+    let done=false;
+    const cleanup=()=>{
+      setTimeout(()=>{
+        try{form.remove()}catch(_){}
+        try{iframe.remove()}catch(_){}
+      },100);
+    };
+
+    const timer=setTimeout(()=>{
+      if(done)return;
+      done=true;
+      cleanup();
+      resolve(true); // POST mungkin sukses walaupun load event redirect tidak terbaca.
+    },1800);
+
+    iframe.onload=()=>{
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      cleanup();
+      resolve(true);
+    };
+
+    try{form.submit()}
+    catch(e){
+      if(!done){
+        done=true;
+        clearTimeout(timer);
+        cleanup();
+        reject(e);
+      }
+    }
+  });
+}
+
+async function verifyDataPeriod(expected){
+  let lastError=null;
+  for(let i=0;i<5;i++){
+    try{
+      const result=await jsonpAppsScript({action:'getDataPeriod',token:DATA_PERIOD_TOKEN},7000);
+      if(result&&result.ok!==false){
+        const actual=String(result.value||'');
+        if(actual===expected)return result;
+      }
+    }catch(e){lastError=e}
+    await new Promise(r=>setTimeout(r,700));
+  }
+  throw lastError||new Error('Nilai periode belum terverifikasi di server');
+}
+
 async function saveDataPeriod(){
   const value=String($('dataPeriodInput')?.value||'').trim(),btn=$('dataPeriodSave');
-  if(!value){showStatus('Pilih tanggal dan jam periode data terlebih dahulu.','error');return}
+  if(!value){
+    showStatus('Pilih tanggal dan jam periode data terlebih dahulu.','error');
+    return;
+  }
   if(btn){btn.disabled=true;btn.textContent='Menyimpan...'}
   try{
-    const result=await jsonpAppsScript({action:'updateDataPeriod',token:DATA_PERIOD_TOKEN,value},8000);
-    if(!result||result.ok===false)throw new Error(result?.message||'Periode data gagal disimpan');
-    renderDataPeriod(result.value||value);closeDataPeriodModal();
-    showStatus(`Periode data disimpan: ${formatDataPeriod(result.value||value)}.`,'success');
-  }catch(e){showStatus(`Gagal menyimpan periode data: ${e.message}`,'error')}
-  finally{if(btn){btn.disabled=false;btn.textContent='Simpan Periode'}}
+    await postDataPeriod(value);
+    const result=await verifyDataPeriod(value);
+    renderDataPeriod(result.value||value);
+    closeDataPeriodModal();
+    showStatus(`Periode data tersimpan: ${formatDataPeriod(result.value||value)}.`,'success');
+  }catch(e){
+    showStatus(`Gagal menyimpan periode data: ${e.message}`,'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Simpan Periode'}
+  }
 }
 
 function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const isRh=view==='rh'||view==='rhprice';$('globalFilters').classList.toggle('hidden',isRh);$('rhFilters').classList.toggle('hidden',!isRh);const rhCondWrap=$('rhConditionFilterWrap');if(rhCondWrap)rhCondWrap.classList.toggle('hidden',view==='rhprice');const allStableWrap=$('trendAllStableWrap');if(allStableWrap){const showAllStable=view==='trend';allStableWrap.classList.toggle('hidden',!showAllStable);allStableWrap.style.display=showAllStable?'':'none';}const stableLabel=$('changeBandStableLabel');if(stableLabel)stableLabel.textContent=view==='period'?'Tidak ada perubahan harga':'Minimal 1 Minggu Tetap';const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Evaluasi Bulanan','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas × Kualitas','Perbandingan harga menurut komoditas, kualitas, dan wilayah.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Mingguan','Deret perubahan harga mingguan secara berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],matrix:['Matriks Komoditas','Seluruh komoditas × kualitas × kabupaten/kota dalam satu tabel analisis.'],rh:['Tabulasi RH','Perbandingan RH antar kabupaten/kota berdasarkan komoditas.'],rhprice:['Harga RH','Previous, Current, RH, dan Keterangan dari sheet RH web.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
