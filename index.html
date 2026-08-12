@@ -51,7 +51,17 @@
     <header class="topbar">
       <button id="menuBtn" class="menu-btn">☰</button>
       <div><p class="eyebrow">SISTEM MONITORING HARGA</p><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle" class="muted">Ringkasan perkembangan harga.</p></div>
-      <div class="top-actions"><span id="lastUpdate" class="update-info">Belum dimuat</span><button id="refreshBtn" class="btn primary">↻ Muat ulang</button></div>
+      <div class="top-actions">
+        <button id="dataPeriodBtn" class="data-period-card" type="button" title="Klik untuk mengubah periode data">
+          <span>PERIODE DATA</span>
+          <strong id="dataPeriodText">Belum diatur</strong>
+          <small>✎ Edit periode</small>
+        </button>
+        <div class="refresh-stack">
+          <span id="lastUpdate" class="update-info">Belum dimuat</span>
+          <button id="refreshBtn" class="btn primary">↻ Muat ulang</button>
+        </div>
+      </div>
     </header>
 
     <div id="status" class="alert hidden"></div>
@@ -184,5 +194,26 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="script.js?v=20260807-rhprice-simplefilter"></script>
+
+  <div id="dataPeriodModal" class="period-modal hidden" role="dialog" aria-modal="true" aria-labelledby="dataPeriodModalTitle">
+    <div class="period-modal-card">
+      <div class="period-modal-head">
+        <div>
+          <p class="eyebrow">PERIODE DATA</p>
+          <h3 id="dataPeriodModalTitle">Atur tanggal dan jam data</h3>
+          <p class="muted">Berlaku untuk seluruh menu dan tersimpan untuk semua pengguna dashboard.</p>
+        </div>
+        <button id="dataPeriodClose" class="period-modal-close" type="button" aria-label="Tutup">×</button>
+      </div>
+      <label class="period-input-label">Tanggal dan jam
+        <input id="dataPeriodInput" type="datetime-local">
+      </label>
+      <div class="period-modal-actions">
+        <button id="dataPeriodCancel" class="btn secondary" type="button">Batal</button>
+        <button id="dataPeriodSave" class="btn primary" type="button">Simpan Periode</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -139,3 +139,18 @@
 .selected-quality-row .row-click-hint{color:#1769e0}
 .detail-flash{animation:detailFlash .55s ease}
 @keyframes detailFlash{0%{box-shadow:0 0 0 0 rgba(23,105,224,.30)}50%{box-shadow:0 0 0 5px rgba(23,105,224,.10)}100%{box-shadow:var(--shadow)}}
+
+/* Papan Periode Data global */
+.top-actions{gap:14px}.refresh-stack{display:flex;align-items:center;gap:10px}
+.data-period-card{min-width:245px;border:1px solid #cfe0f3;background:linear-gradient(135deg,#fff,#eef6ff);border-radius:13px;padding:10px 13px;text-align:left;cursor:pointer;color:var(--text);box-shadow:var(--shadow);transition:.18s}
+.data-period-card:hover{transform:translateY(-1px);border-color:#8db7eb;box-shadow:0 8px 20px rgba(23,105,224,.12)}
+.data-period-card span,.data-period-card small{display:block}.data-period-card span{font-size:8px;letter-spacing:.13em;font-weight:800;color:var(--blue)}
+.data-period-card strong{display:block;font-size:13px;margin:4px 0 3px;white-space:nowrap}.data-period-card small{font-size:9px;color:var(--muted);font-weight:700}
+.period-modal{position:fixed;inset:0;background:rgba(5,24,43,.48);display:grid;place-items:center;padding:20px;z-index:1000}
+.period-modal-card{width:min(470px,100%);background:#fff;border-radius:18px;padding:21px;box-shadow:0 25px 70px rgba(0,0,0,.25)}
+.period-modal-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.period-modal-head h3{margin:0;font-size:19px}
+.period-modal-close{border:0;background:#eef3f8;width:34px;height:34px;border-radius:9px;font-size:22px;line-height:1;cursor:pointer;color:#53687e}
+.period-input-label{display:block;margin-top:18px;font-size:11px;font-weight:800;color:#52677d}.period-input-label input{display:block;width:100%;margin-top:7px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);background:#fff;outline:none}
+.period-input-label input:focus{border-color:#78a9eb;box-shadow:0 0 0 3px rgba(23,105,224,.08)}.period-modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+@media(max-width:1100px){.top-actions{align-items:flex-end;flex-direction:column}.refresh-stack{justify-content:flex-end}.data-period-card{min-width:220px}}
+@media(max-width:820px){.data-period-card{min-width:0;width:100%}.refresh-stack{width:100%;justify-content:flex-end}}

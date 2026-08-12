@@ -12,6 +12,35 @@ function doGet(e) {
   const p = (e && e.parameter) || {};
   const action = String(p.action || '');
 
+
+  if (action === 'getDataPeriod') {
+    try {
+      validateToken_(p.token);
+      const props = PropertiesService.getScriptProperties();
+      return jsonOrJsonp({
+        ok:true,
+        value:String(props.getProperty('DATA_PERIOD') || ''),
+        serverTime:new Date().toISOString()
+      }, p.callback);
+    } catch (err) {
+      return jsonOrJsonp({ok:false,message:errorText_(err)}, p.callback);
+    }
+  }
+
+  if (action === 'updateDataPeriod') {
+    try {
+      validateToken_(p.token);
+      const value = String(p.value || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+        throw new Error('Format periode data tidak valid.');
+      }
+      PropertiesService.getScriptProperties().setProperty('DATA_PERIOD', value);
+      return jsonOrJsonp({ok:true,value:value,serverTime:new Date().toISOString()}, p.callback);
+    } catch (err) {
+      return jsonOrJsonp({ok:false,message:errorText_(err)}, p.callback);
+    }
+  }
+
   if (action === 'updateNote') {
     try {
       return jsonOrJsonp(updateNote_(p), p.callback);
