@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260807-combo-rh2">
+  <link rel="stylesheet" href="style.css?v=20260813-period-lokal">
 </head>
 <body>
 <div id="loginScreen" class="login-screen">
@@ -51,7 +51,17 @@
     <header class="topbar">
       <button id="menuBtn" class="menu-btn">☰</button>
       <div><p class="eyebrow">SISTEM MONITORING HARGA</p><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle" class="muted">Ringkasan perkembangan harga.</p></div>
-      <div class="top-actions"><span id="lastUpdate" class="update-info">Belum dimuat</span><button id="refreshBtn" class="btn primary">↻ Muat ulang</button></div>
+      <div class="top-actions">
+        <button id="dataPeriodBtn" class="data-period-card" type="button" title="Klik untuk mengubah periode data">
+          <span class="data-period-label">PERIODE DATA</span>
+          <strong id="dataPeriodText">Belum diatur</strong>
+          <small>✎ Edit periode</small>
+        </button>
+        <div class="refresh-stack">
+          <span id="lastUpdate" class="update-info">Belum dimuat</span>
+          <button id="refreshBtn" class="btn primary">↻ Muat ulang</button>
+        </div>
+      </div>
     </header>
 
     <div id="status" class="alert hidden"></div>
@@ -183,6 +193,35 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="script.js?v=20260807-rhprice-simplefilter"></script>
+<script src="script.js?v=20260813-period-lokal"></script>
+
+  <div id="dataPeriodModal" class="period-modal hidden" role="dialog" aria-modal="true" aria-labelledby="dataPeriodModalTitle">
+    <div class="period-modal-card">
+      <div class="period-modal-head">
+        <div>
+          <p class="eyebrow">PERIODE DATA</p>
+          <h3 id="dataPeriodModalTitle">Atur periode data</h3>
+          <p class="muted">Tanggal dan jam ini hanya menjadi penanda di dashboard dan tidak terhubung ke spreadsheet.</p>
+        </div>
+        <button id="dataPeriodClose" class="period-modal-close" type="button" aria-label="Tutup">×</button>
+      </div>
+      <div class="period-form-grid">
+        <label>Tanggal<input id="dataPeriodDate" type="date"></label>
+        <label>Jam<input id="dataPeriodTime" type="time"></label>
+      </div>
+      <div class="period-preview">
+        <span>Pratinjau</span>
+        <strong id="dataPeriodPreview">Belum diatur</strong>
+      </div>
+      <div class="period-modal-actions">
+        <button id="dataPeriodClear" class="btn secondary" type="button">Hapus Periode</button>
+        <div class="period-modal-actions-right">
+          <button id="dataPeriodCancel" class="btn secondary" type="button">Batal</button>
+          <button id="dataPeriodSave" class="btn primary" type="button">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

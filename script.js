@@ -37,6 +37,72 @@ const fmtInt=v=>new Intl.NumberFormat('id-ID').format(v||0);
 const avg=arr=>{const a=arr.filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
 const unique=(arr,key)=>[...new Set(arr.map(x=>x[key]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'id'));
 
+
+/* ===== Periode Data lokal (tidak terhubung Spreadsheet / Apps Script) ===== */
+const LOCAL_DATA_PERIOD_KEY='monitoringHarga.dataPeriod.v1';
+
+function readLocalDataPeriod(){
+  try{
+    const raw=localStorage.getItem(LOCAL_DATA_PERIOD_KEY);
+    if(!raw)return {date:'',time:''};
+    const val=JSON.parse(raw);
+    return {date:typeof val?.date==='string'?val.date:'',time:typeof val?.time==='string'?val.time:''};
+  }catch(_){return {date:'',time:''}}
+}
+function formatLocalDataPeriod(date,time){
+  if(!date)return 'Belum diatur';
+  const m=String(date).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return date+(time?` • ${time} WIB`:'');
+  const bulan=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const tanggal=`${Number(m[3])} ${bulan[Number(m[2])-1]} ${m[1]}`;
+  return time?`${tanggal} • ${String(time).replace(':','.')} WIB`:tanggal;
+}
+function renderLocalDataPeriod(){
+  const val=readLocalDataPeriod(),el=$('dataPeriodText');
+  if(el)el.textContent=formatLocalDataPeriod(val.date,val.time);
+  return val;
+}
+function updateLocalPeriodPreview(){
+  const date=$('dataPeriodDate')?.value||'',time=$('dataPeriodTime')?.value||'';
+  if($('dataPeriodPreview'))$('dataPeriodPreview').textContent=formatLocalDataPeriod(date,time);
+}
+function openLocalDataPeriodModal(){
+  const modal=$('dataPeriodModal');if(!modal)return;
+  const val=readLocalDataPeriod();
+  $('dataPeriodDate').value=val.date;
+  $('dataPeriodTime').value=val.time;
+  updateLocalPeriodPreview();
+  modal.classList.remove('hidden');
+}
+function closeLocalDataPeriodModal(){$('dataPeriodModal')?.classList.add('hidden')}
+function saveLocalDataPeriod(){
+  const date=$('dataPeriodDate')?.value||'',time=$('dataPeriodTime')?.value||'';
+  if(!date){showStatus('Pilih tanggal periode data terlebih dahulu.','error');return}
+  try{
+    localStorage.setItem(LOCAL_DATA_PERIOD_KEY,JSON.stringify({date,time}));
+    renderLocalDataPeriod();closeLocalDataPeriodModal();
+    showStatus(`Periode data disimpan: ${formatLocalDataPeriod(date,time)}.`,'success');
+  }catch(e){showStatus(`Gagal menyimpan periode data di browser: ${e.message}`,'error')}
+}
+function clearLocalDataPeriod(){
+  try{localStorage.removeItem(LOCAL_DATA_PERIOD_KEY)}catch(_){}
+  renderLocalDataPeriod();closeLocalDataPeriodModal();
+  showStatus('Periode data dihapus.','info');
+}
+function initLocalDataPeriod(){
+  renderLocalDataPeriod();
+  if(!$('dataPeriodBtn'))return;
+  $('dataPeriodBtn').onclick=openLocalDataPeriodModal;
+  $('dataPeriodClose').onclick=closeLocalDataPeriodModal;
+  $('dataPeriodCancel').onclick=closeLocalDataPeriodModal;
+  $('dataPeriodSave').onclick=saveLocalDataPeriod;
+  $('dataPeriodClear').onclick=clearLocalDataPeriod;
+  $('dataPeriodDate').addEventListener('input',updateLocalPeriodPreview);
+  $('dataPeriodTime').addEventListener('input',updateLocalPeriodPreview);
+  $('dataPeriodModal').addEventListener('click',e=>{if(e.target===$('dataPeriodModal'))closeLocalDataPeriodModal()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLocalDataPeriodModal()});
+}
+
 const CHANGE_CATEGORIES=[
   {id:'stable',label:'Tidak ada perubahan',className:'cat-stable'},
   {id:'up-0',label:'Bertambah 0–19,99%',className:'cat-up-0'},
@@ -527,3 +593,5 @@ function refreshRhViews(){state.rhPage=1;state.rhPricePage=1;renderRh();renderRh
 function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const isRh=view==='rh'||view==='rhprice';$('globalFilters').classList.toggle('hidden',isRh);$('rhFilters').classList.toggle('hidden',!isRh);const rhCondWrap=$('rhConditionFilterWrap');if(rhCondWrap)rhCondWrap.classList.toggle('hidden',view==='rhprice');const allStableWrap=$('trendAllStableWrap');if(allStableWrap){const showAllStable=view==='trend';allStableWrap.classList.toggle('hidden',!showAllStable);allStableWrap.style.display=showAllStable?'':'none';}const stableLabel=$('changeBandStableLabel');if(stableLabel)stableLabel.textContent=view==='period'?'Tidak ada perubahan harga':'Minimal 1 Minggu Tetap';const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Evaluasi Bulanan','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas × Kualitas','Perbandingan harga menurut komoditas, kualitas, dan wilayah.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Mingguan','Deret perubahan harga mingguan secara berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],matrix:['Matriks Komoditas','Seluruh komoditas × kualitas × kabupaten/kota dalam satu tabel analisis.'],rh:['Tabulasi RH','Perbandingan RH antar kabupaten/kota berdasarkan komoditas.'],rhprice:['Harga RH','Previous, Current, RH, dan Keterangan dari sheet RH web.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
 function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','marketTypeFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));document.querySelectorAll('.change-band-check').forEach(el=>el.addEventListener('change',applyFilters));let filterTimer;const liveFilter=()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,120)};$('commodityFilter').addEventListener('input',()=>{updateQualityDatalist(false);liveFilter()});$('commodityFilter').addEventListener('change',()=>{updateQualityDatalist(true);applyFilters()});$('qualityFilter').addEventListener('input',()=>{state.commodityDetailManual=false;liveFilter()});$('qualityFilter').addEventListener('change',()=>{state.commodityDetailManual=false;applyFilters()});$('searchFilter').addEventListener('input',liveFilter);setupSearchCombo('commodityFilter',()=>unique(state.all,'commodity'),'Semua komoditas',()=>{updateQualityDatalist(true)});setupSearchCombo('qualityFilter',()=>qualityOptionsForCommodity(),'Semua kualitas');$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('periodCategoryFilter').addEventListener('change',()=>{state.periodPage=1;renderPeriod()});$('periodPageSize').addEventListener('change',e=>{state.periodPageSize=e.target.value==='all'?'all':Number(e.target.value);state.periodPage=1;renderPeriod()});$('periodRawOrderBtn').onclick=resetPeriodRawOrder;$('periodExportBtn').onclick=()=>exportEvaluation('period');$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendAllStable')?.addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendPageSize').addEventListener('change',e=>{state.trendPageSize=e.target.value==='all'?'all':Number(e.target.value);state.trendPage=1;renderTrend()});$('trendRawOrderBtn').onclick=resetTrendRawOrder;$('trendExportBtn').onclick=()=>exportEvaluation('trend');$('trendRefreshBtn').onclick=loadAll;$('matrixExportBtn').onclick=exportMatrixView;$('matrixRawOrderBtn').onclick=resetMatrixOrder;bindPeriodSort();bindTrendSort();bindMatrixSort();bindRhSort();['rhKabFilter','rhConditionFilter'].forEach(id=>$(id).addEventListener('change',refreshRhViews));document.querySelectorAll('.rh-category-check').forEach(el=>el.addEventListener('change',refreshRhViews));let rhTimer;const rhLive=()=>{clearTimeout(rhTimer);rhTimer=setTimeout(refreshRhViews,120)};$('rhCommodityFilter').addEventListener('input',rhLive);$('rhCommodityFilter').addEventListener('change',refreshRhViews);setupSearchCombo('rhCommodityFilter',()=>unique(state.rhAll,'commodity'),'Semua komoditas');$('rhSearchFilter').addEventListener('input',rhLive);$('rhPageSize').addEventListener('change',e=>{state.rhPageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPage=1;renderRh()});$('rhPricePageSize').addEventListener('change',e=>{state.rhPricePageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPricePage=1;renderRhPrice()});$('rhPrevPage').onclick=()=>{if(state.rhPage>1){state.rhPage--;renderRh()}};$('rhNextPage').onclick=()=>{state.rhPage++;renderRh()};$('rhPricePrevPage').onclick=()=>{if(state.rhPricePage>1){state.rhPricePage--;renderRhPrice()}};$('rhPriceNextPage').onclick=()=>{state.rhPricePage++;renderRhPrice()};$('rhRawOrderBtn').onclick=resetRhOrder;$('rhPriceRawOrderBtn').onclick=resetRhPriceOrder;$('rhExportBtn').onclick=()=>exportRh('rh');$('rhPriceExportBtn').onclick=()=>exportRh('rhprice');startRhAutoSync();if(logged)loadAll()}
 document.addEventListener('DOMContentLoaded',init);
+
+window.addEventListener('DOMContentLoaded',initLocalDataPeriod);

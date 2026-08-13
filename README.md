@@ -221,3 +221,11 @@ Versi ini memperbaiki benturan ID textarea antar menu. `Harga RH` sekarang memak
 ## Revisi terbaru
 - Evaluasi Bulanan: filter `Semua Minggu Tidak Berubah` tidak ditampilkan dan label `Minimal 1 Minggu Tetap` menjadi `Tidak ada perubahan harga` khusus pada menu ini. Evaluasi Mingguan tetap memakai label/fitur sebelumnya.
 - Menu Komoditas: baris pada tabel Ringkasan seluruh kualitas sekarang dapat diklik untuk mengubah kualitas detail. Statistik wilayah, KPI, dan grafik kualitas terpilih langsung mengikuti baris yang diklik tanpa harus mengubah filter Kualitas global.
+
+
+## Periode Data lokal
+Papan **PERIODE DATA** ditambahkan di kanan atas dashboard. Tanggal dan jam dapat diedit manual dan disimpan di `localStorage` browser.
+
+Contoh: **13 Agustus 2026 • 08.45 WIB**.
+
+Fitur ini tidak terhubung ke Spreadsheet atau Apps Script, sehingga `Code.gs` tidak perlu diubah/deploy ulang. Untuk GitHub cukup timpa `index.html`, `style.css`, dan `script.js`, lalu tekan `Ctrl+F5`.
