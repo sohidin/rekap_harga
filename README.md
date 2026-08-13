@@ -229,3 +229,23 @@ Papan **PERIODE DATA** ditambahkan di kanan atas dashboard. Tanggal dan jam dapa
 Contoh: **13 Agustus 2026 • 08.45 WIB**.
 
 Fitur ini tidak terhubung ke Spreadsheet atau Apps Script, sehingga `Code.gs` tidak perlu diubah/deploy ulang. Untuk GitHub cukup timpa `index.html`, `style.css`, dan `script.js`, lalu tekan `Ctrl+F5`.
+
+
+## Sinkronisasi dua arah Keterangan Evaluasi Bulanan & Mingguan
+
+Perbaikan ini hanya berlaku untuk tiga sheet harga utama:
+
+- `Mingguan` → Keterangan kolom **Y**
+- `Dwi Mingguan` → Keterangan kolom **S**
+- `bulanan` → Keterangan kolom **O**
+
+Perubahan utama:
+
+1. Textarea Keterangan Evaluasi Bulanan dan Evaluasi Mingguan sekarang memiliki ID berbeda, sehingga tombol Simpan selalu membaca catatan dari menu/baris yang benar.
+2. Setelah catatan disimpan dari salah satu menu, nilai yang sama langsung diperbarui pada menu lainnya.
+3. Apps Script menyediakan endpoint `getPriceNotes` untuk membaca hanya kolom Keterangan dari ketiga sheet setiap sekitar 2 detik ketika Evaluasi Bulanan/Mingguan sedang dibuka.
+4. Perubahan Keterangan yang dibuat langsung di spreadsheet otomatis masuk ke web.
+5. Perubahan dari web tetap menggunakan `updateNote` yang sudah memverifikasi sel tujuan setelah ditulis.
+6. Modul `Tabulasi RH` dan `Harga RH` tidak diubah.
+
+Karena `Code.gs` ditambah endpoint baru, lakukan **Deploy → Manage deployments → Edit → New version → Deploy** pada Web App yang sama. URL `/exec` tidak perlu diganti bila deployment yang sama diperbarui.

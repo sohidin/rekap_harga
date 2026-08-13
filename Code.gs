@@ -20,6 +20,39 @@ function doGet(e) {
     }
   }
 
+
+  if (action === 'getPriceNotes') {
+    try {
+      validateToken_(p.token);
+      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      const specs = [
+        {sheet:'Mingguan', col:25},
+        {sheet:'Dwi Mingguan', col:19},
+        {sheet:'bulanan', col:15}
+      ];
+      const rows = [];
+      specs.forEach(spec => {
+        const sh = ss.getSheetByName(spec.sheet);
+        if (!sh) throw new Error('Sheet tidak ditemukan: ' + spec.sheet);
+        const lastRow = sh.getLastRow();
+        if (lastRow < 3) return;
+        const values = sh.getRange(3, spec.col, lastRow - 2, 1).getDisplayValues();
+        values.forEach((r,i) => rows.push({
+          sheet:spec.sheet,
+          row:i+3,
+          note:String(r[0] == null ? '' : r[0])
+        }));
+      });
+      return jsonOrJsonp({
+        ok:true,
+        rows:rows,
+        serverTime:new Date().toISOString()
+      }, p.callback);
+    } catch (err) {
+      return jsonOrJsonp({ok:false,message:errorText_(err)}, p.callback);
+    }
+  }
+
   if (action === 'getRhNotes') {
     try {
       validateToken_(p.token);

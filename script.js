@@ -1,9 +1,10 @@
 const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
-  appsScriptUrl:'https://script.google.com/macros/s/AKfycbxNAxTywGANlRbh719_uuKhNfo57VBpLibY7hwhqI8MLxbxHD5uWxHptEO0S4M1_7LzIQ/exec',
+  appsScriptUrl:'https://script.google.com/macros/s/AKfycbz8Olnh46W0WIqmghUhND_uqrBH-eCZ-tmNyMh8sJ1cklFQHRiWk4pn5rkI1fpHOriDNQ/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25,
-  rhSyncIntervalMs:2000
+  rhSyncIntervalMs:2000,
+  priceNoteSyncIntervalMs:2000
 };
 const SHEETS={
   'Mingguan':{
@@ -25,7 +26,7 @@ const SHEETS={
 
 const RH_SHEET={name:'RH web',lastColumn:'H',kabIndex:0,commodityCodeIndex:2,commodityIndex:3,prevIndex:4,currentIndex:5,rhIndex:6,noteIndex:7,noteColumn:'H'};
 const RH_KABS=['1902','1903','1906','1971'];
-const state={all:[],filtered:[],rhAll:[],rhSyncTimer:null,rhSyncBusy:false,view:'dashboard',periodPage:1,trendPage:1,rhPage:1,rhPricePage:1,periodPageSize:50,trendPageSize:50,rhPageSize:25,rhPricePageSize:25,periodSortKey:'rawOrder',periodSortDir:'asc',trendSortKey:'rawOrder',trendSortDir:'asc',matrixSortKey:'rawOrder',matrixSortDir:'asc',rhSortKey:'rawOrder',rhSortDir:'asc',rhPriceSortKey:'rawOrder',rhPriceSortDir:'asc',commodityDetailQuality:'',commodityDetailManual:false,commodityFocus:'',charts:{}};
+const state={all:[],filtered:[],rhAll:[],rhSyncTimer:null,rhSyncBusy:false,priceNoteSyncTimer:null,priceNoteSyncBusy:false,view:'dashboard',periodPage:1,trendPage:1,rhPage:1,rhPricePage:1,periodPageSize:50,trendPageSize:50,rhPageSize:25,rhPricePageSize:25,periodSortKey:'rawOrder',periodSortDir:'asc',trendSortKey:'rawOrder',trendSortDir:'asc',matrixSortKey:'rawOrder',matrixSortDir:'asc',rhSortKey:'rawOrder',rhSortDir:'asc',rhPriceSortKey:'rawOrder',rhPriceSortDir:'asc',commodityDetailQuality:'',commodityDetailManual:false,commodityFocus:'',charts:{}};
 const SHEET_ORDER={'Mingguan':0,'Dwi Mingguan':1,'bulanan':2};
 const $=id=>document.getElementById(id);
 const norm=v=>String(v??'').trim();
@@ -221,13 +222,14 @@ function destroyChart(id){if(state.charts[id])state.charts[id].destroy()}
 function chart(id,type,labels,data,label){destroyChart(id);state.charts[id]=new Chart($(id),{type,data:{labels,datasets:[{label,data}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:type==='doughnut'}},scales:type==='doughnut'?{}:{y:{beginAtZero:true}}}})}
 function groupAvg(data,key,value='change'){const m={};data.forEach(x=>{if(!x[key]||!Number.isFinite(x[value]))return;(m[x[key]]??=[]).push(x[value])});return Object.entries(m).map(([name,v])=>({name,value:avg(v)}))}
 function renderDashboard(){const d=state.filtered,up=d.filter(x=>x.change>0),down=d.filter(x=>x.change<0),stable=d.filter(x=>Number.isFinite(x.change)&&Math.abs(x.change)<.005),ext=d.filter(x=>Number.isFinite(x.change)&&Math.abs(x.change)>=20);$('kpiTotal').textContent=fmtInt(d.length);$('kpiUp').textContent=fmtInt(up.length);$('kpiDown').textContent=fmtInt(down.length);$('kpiStable').textContent=fmtInt(stable.length);$('kpiExtreme').textContent=fmtInt(ext.length);$('conditionScore').textContent=fmtInt(ext.length);const ap=avg(d.map(x=>x.prev)),ac=avg(d.map(x=>x.current));$('avgPrev').textContent=fmtMoney(ap);$('avgCurrent').textContent=fmtMoney(ac);$('avgChange').textContent=ap?fmtPct(((ac-ap)/ap)*100):'–';$('heroNarrative').textContent=`Menampilkan ${fmtInt(d.length)} observasi sesuai filter aktif; ${fmtInt(ext.length)} di antaranya berubah minimal 20 persen.`;chart('compositionChart','doughnut',['Naik','Turun','Tetap'],[up.length,down.length,stable.length],'Observasi');const top=groupAvg(d,'commodity').sort((a,b)=>Math.abs(b.value)-Math.abs(a.value)).slice(0,10);chart('topIncreaseChart','bar',top.map(x=>x.name),top.map(x=>x.value),'Perubahan (%)')}
-function noteCell(x){return `<textarea class="editable-note" id="note-${x.sheet.replace(/\s/g,'_')}-${x.rowNumber}" data-sheet="${esc(x.sheet)}" data-row="${x.rowNumber}">${esc(x.note)}</textarea>`}
-function saveButton(x){return `<button class="btn primary save-note" data-sheet="${esc(x.sheet)}" data-row="${x.rowNumber}" data-note-id="note-${x.sheet.replace(/\s/g,'_')}-${x.rowNumber}">Simpan</button>`}
+function priceNoteId(x,scope='period'){return `note-${scope}-${x.sheet.replace(/\s/g,'_')}-${x.rowNumber}`}
+function noteCell(x,scope='period'){return `<textarea class="editable-note price-note" id="${priceNoteId(x,scope)}" data-note-scope="${esc(scope)}" data-sheet="${esc(x.sheet)}" data-row="${x.rowNumber}" data-saved-value="${esc(x.note)}">${esc(x.note)}</textarea>`}
+function saveButton(x,scope='period'){return `<button class="btn primary save-note" data-sheet="${esc(x.sheet)}" data-row="${x.rowNumber}" data-note-scope="${esc(scope)}" data-note-id="${priceNoteId(x,scope)}">Simpan</button>`}
 function categoryOfRow(x){return classifyChange(x.change)||CHANGE_CATEGORIES[0]}
 function periodLegendHtml(){return CHANGE_CATEGORIES.map(c=>`<span class="legend-chip ${c.className}"><i class="legend-dot" style="background:var(--cat-color)"></i>${esc(c.label)}</span>`).join('')}
 function rowHtml(x,recap=false){
   const cat=categoryOfRow(x), movement=movementClass(x.change);
-  return `<tr class="period-row ${cat.className} ${Math.abs(x.change||0)>=20?'extreme-row':''}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td>${recap?'':`<td><span class="commodity-code">${esc(x.commodityCode)}</span></td>`}<td><strong class="primary-cell-text">${esc(x.commodity)}</strong></td><td><span class="quality-text">${esc(x.quality)}</span></td>${recap?`<td>${esc(x.marketType)}</td>`:''}<td>${esc(x.market)}</td><td><span class="respondent-text">${esc(x.respondent)}</span></td><td class="num"><div class="period-price-card base-price"><span>Harga dasar</span><strong>${fmtMoney(x.prev)}</strong></div></td><td class="num"><div class="period-price-card current-price ${cat.className}"><span>Harga saat ini</span><strong>${fmtMoney(x.current)}</strong></div></td><td class="num"><span class="change-badge ${cat.className}"><b>${movement==='up'?'▲':movement==='down'?'▼':'—'}</b>${fmtPct(x.change)}<small>${esc(cat.label)}</small></span></td><td>${noteCell(x)}</td><td>${saveButton(x)}</td></tr>`
+  return `<tr class="period-row ${cat.className} ${Math.abs(x.change||0)>=20?'extreme-row':''}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td>${recap?'':`<td><span class="commodity-code">${esc(x.commodityCode)}</span></td>`}<td><strong class="primary-cell-text">${esc(x.commodity)}</strong></td><td><span class="quality-text">${esc(x.quality)}</span></td>${recap?`<td>${esc(x.marketType)}</td>`:''}<td>${esc(x.market)}</td><td><span class="respondent-text">${esc(x.respondent)}</span></td><td class="num"><div class="period-price-card base-price"><span>Harga dasar</span><strong>${fmtMoney(x.prev)}</strong></div></td><td class="num"><div class="period-price-card current-price ${cat.className}"><span>Harga saat ini</span><strong>${fmtMoney(x.current)}</strong></div></td><td class="num"><span class="change-badge ${cat.className}"><b>${movement==='up'?'▲':movement==='down'?'▼':'—'}</b>${fmtPct(x.change)}<small>${esc(cat.label)}</small></span></td><td>${noteCell(x,'period')}</td><td>${saveButton(x,'period')}</td></tr>`
 }
 function paginate(data,page,size=CONFIG.pageSize){if(size==='all')return{rows:data,pages:1,page:1};const n=Number(size)||CONFIG.pageSize,pages=Math.max(1,Math.ceil(data.length/n));page=Math.min(page,pages);return{rows:data.slice((page-1)*n,page*n),pages,page}}
 function periodBaseData(){
@@ -301,6 +303,13 @@ async function saveNote(btn){
     if(item)item.note=note;
     if(noteEl)noteEl.dataset.savedValue=note;
 
+    if(sheet!=='RH web'){
+      updateVisiblePriceNote(sheet,row,note);
+      // Baca kembali catatan non-RH sesaat setelah simpan agar kedua menu
+      // dan spreadsheet dipastikan memakai nilai yang sama.
+      setTimeout(()=>syncPriceNotesFast(true),250);
+    }
+
     if(sheet==='RH web'){
       const resolvedRow=Number(result.row||row);
       state.rhAll.filter(x=>x.rowNumber===row||x.rowNumber===resolvedRow).forEach(x=>{x.note=note;if(x.rowNumber===row&&resolvedRow!==row)x.rowNumber=resolvedRow});
@@ -335,6 +344,64 @@ function gasJsonp(params,timeoutMs=10000){
     document.head.appendChild(script);
   });
 }
+
+function updateVisiblePriceNote(sheet,row,note){
+  const safeSheet=String(sheet).replace(/\s/g,'_');
+  [`note-period-${safeSheet}-${row}`,`note-trend-${safeSheet}-${row}`].forEach(id=>{
+    const el=$(id);
+    if(el&&document.activeElement!==el){
+      el.value=String(note??'');
+      el.dataset.savedValue=String(note??'');
+    }
+  });
+}
+
+async function syncPriceNotesFast(silent=false){
+  const active=document.activeElement;
+  // Jangan menimpa teks yang sedang diketik pada Evaluasi Bulanan/Mingguan.
+  if(state.priceNoteSyncBusy||(active&&active.matches&&active.matches('textarea.price-note')))return;
+  state.priceNoteSyncBusy=true;
+  try{
+    const result=await gasJsonp({action:'getPriceNotes',token:'harga1900',ts:String(Date.now())},8000);
+    if(!result||result.ok===false)throw new Error(result?.message||'Respons sinkronisasi Keterangan tidak valid');
+
+    const notes=new Map();
+    (result.rows||[]).forEach(r=>{
+      notes.set(`${String(r.sheet)}|${Number(r.row)}`,String(r.note??''));
+    });
+
+    let changed=0;
+    state.all.forEach(x=>{
+      const key=`${x.sheet}|${x.rowNumber}`;
+      if(notes.has(key)){
+        const note=notes.get(key);
+        if(x.note!==note){x.note=note;changed++}
+        updateVisiblePriceNote(x.sheet,x.rowNumber,note);
+      }
+    });
+
+    if(changed){
+      // state.filtered berisi referensi object yang sama dengan state.all,
+      // sehingga kedua menu langsung konsisten tanpa reload data harga.
+      if(!silent)showStatus(`Keterangan harga tersinkron (${fmtInt(changed)} perubahan).`,'success');
+    }else if(!silent){
+      showStatus('Keterangan Evaluasi Bulanan/Mingguan sudah sinkron dengan spreadsheet.','success');
+    }
+  }catch(e){
+    if(!silent)showStatus(`Sinkronisasi Keterangan harga gagal: ${e.message}`,'error');
+  }finally{
+    state.priceNoteSyncBusy=false;
+  }
+}
+
+function startPriceNoteAutoSync(){
+  if(state.priceNoteSyncTimer)clearInterval(state.priceNoteSyncTimer);
+  state.priceNoteSyncTimer=setInterval(()=>{
+    // Cukup aktif saat salah satu menu evaluasi harga sedang dibuka.
+    if(state.view==='period'||state.view==='trend')syncPriceNotesFast(true);
+  },CONFIG.priceNoteSyncIntervalMs||2000);
+}
+
 function updateVisibleRhNote(row,note){
   const ids=[`note-RH_web-${row}`,`note-rhprice-RH_web-${row}`];
   ids.forEach(id=>{const el=$(id);if(el&&document.activeElement!==el){el.value=note;el.dataset.savedValue=note}});
@@ -420,7 +487,7 @@ function trendStatsHtml(x){
 }
 function trendRowHtml(x){
   const largest=x.series.filter(s=>s.valid).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change))[0],cat=largest?.category||CHANGE_CATEGORIES[0];
-  return `<tr class="trend-row ${cat.className}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td><td><span class="commodity-code">${esc(x.commodityCode)}</span></td><td><strong>${esc(x.commodity)}</strong><small class="cell-sub">${esc(x.quality)}</small></td><td>${esc(x.market)}<small class="cell-sub">${esc(x.respondent)}</small></td><td>${priceTimelineHtml(x)}</td><td>${trendStatsHtml(x)}</td><td>${noteCell(x)}</td><td>${saveButton(x)}</td></tr>`;
+  return `<tr class="trend-row ${cat.className}"><td>${esc(x.period)}</td><td>${esc(x.kab)}</td><td><span class="commodity-code">${esc(x.commodityCode)}</span></td><td><strong>${esc(x.commodity)}</strong><small class="cell-sub">${esc(x.quality)}</small></td><td>${esc(x.market)}<small class="cell-sub">${esc(x.respondent)}</small></td><td>${priceTimelineHtml(x)}</td><td>${trendStatsHtml(x)}</td><td>${noteCell(x,'trend')}</td><td>${saveButton(x,'trend')}</td></tr>`;
 }
 function renderTrendLegend(){if(!$('trendLegend'))return;$('trendLegend').innerHTML=CHANGE_CATEGORIES.map(c=>`<span class="legend-chip ${c.className}"><i class="legend-dot" style="background:var(--cat-color)"></i>${esc(c.label)}</span>`).join('');const sel=$('trendCategoryFilter');if(sel&&sel.options.length===1)sel.innerHTML='<option value="">Semua kelompok</option>'+CHANGE_CATEGORIES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('');const psel=$('periodCategoryFilter');if(psel&&psel.options.length===1)psel.innerHTML='<option value="">Semua kelompok</option>'+CHANGE_CATEGORIES.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('')}
 function renderTrend(){if(!$('trendTableBody'))return;renderTrendLegend();const d=sortedTrendData(),counts=Object.fromEntries(CHANGE_CATEGORIES.map(c=>[c.id,0]));d.forEach(x=>x.series.forEach(s=>{if(s.valid&&s.category)counts[s.category.id]++}));$('trendSummary').innerHTML=CHANGE_CATEGORIES.map(c=>`<article class="trend-summary-card ${c.className}"><span>${esc(c.label)}</span><strong>${fmtInt(counts[c.id])}</strong></article>`).join('');const p=paginate(d,state.trendPage,state.trendPageSize);state.trendPage=p.page;$('trendTableBody').innerHTML=p.rows.map(trendRowHtml).join('')||'<tr><td colspan="9">Tidak ada deret harga valid. Nilai 0 dan kosong dilewati.</td></tr>';$('trendPageInfo').textContent=state.trendPageSize==='all'?`Menampilkan semua • ${fmtInt(d.length)} baris • ${fmtInt(d.reduce((n,x)=>n+x.series.filter(s=>s.valid).length,0))} perubahan berurutan`:`Halaman ${p.page} dari ${p.pages} • ${fmtInt(d.length)} baris • ${fmtInt(d.reduce((n,x)=>n+x.series.filter(s=>s.valid).length,0))} perubahan berurutan`;bindSaveButtons();updateTrendSortMarks()}
@@ -591,7 +658,7 @@ function startRhAutoSync(){
 function refreshRhViews(){state.rhPage=1;state.rhPricePage=1;renderRh();renderRhPrice()}
 
 function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const isRh=view==='rh'||view==='rhprice';$('globalFilters').classList.toggle('hidden',isRh);$('rhFilters').classList.toggle('hidden',!isRh);const rhCondWrap=$('rhConditionFilterWrap');if(rhCondWrap)rhCondWrap.classList.toggle('hidden',view==='rhprice');const allStableWrap=$('trendAllStableWrap');if(allStableWrap){const showAllStable=view==='trend';allStableWrap.classList.toggle('hidden',!showAllStable);allStableWrap.style.display=showAllStable?'':'none';}const stableLabel=$('changeBandStableLabel');if(stableLabel)stableLabel.textContent=view==='period'?'Tidak ada perubahan harga':'Minimal 1 Minggu Tetap';const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Evaluasi Bulanan','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas × Kualitas','Perbandingan harga menurut komoditas, kualitas, dan wilayah.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Mingguan','Deret perubahan harga mingguan secara berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],matrix:['Matriks Komoditas','Seluruh komoditas × kualitas × kabupaten/kota dalam satu tabel analisis.'],rh:['Tabulasi RH','Perbandingan RH antar kabupaten/kota berdasarkan komoditas.'],rhprice:['Harga RH','Previous, Current, RH, dan Keterangan dari sheet RH web.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
-function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','marketTypeFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));document.querySelectorAll('.change-band-check').forEach(el=>el.addEventListener('change',applyFilters));let filterTimer;const liveFilter=()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,120)};$('commodityFilter').addEventListener('input',()=>{updateQualityDatalist(false);liveFilter()});$('commodityFilter').addEventListener('change',()=>{updateQualityDatalist(true);applyFilters()});$('qualityFilter').addEventListener('input',()=>{state.commodityDetailManual=false;liveFilter()});$('qualityFilter').addEventListener('change',()=>{state.commodityDetailManual=false;applyFilters()});$('searchFilter').addEventListener('input',liveFilter);setupSearchCombo('commodityFilter',()=>unique(state.all,'commodity'),'Semua komoditas',()=>{updateQualityDatalist(true)});setupSearchCombo('qualityFilter',()=>qualityOptionsForCommodity(),'Semua kualitas');$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('periodCategoryFilter').addEventListener('change',()=>{state.periodPage=1;renderPeriod()});$('periodPageSize').addEventListener('change',e=>{state.periodPageSize=e.target.value==='all'?'all':Number(e.target.value);state.periodPage=1;renderPeriod()});$('periodRawOrderBtn').onclick=resetPeriodRawOrder;$('periodExportBtn').onclick=()=>exportEvaluation('period');$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendAllStable')?.addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendPageSize').addEventListener('change',e=>{state.trendPageSize=e.target.value==='all'?'all':Number(e.target.value);state.trendPage=1;renderTrend()});$('trendRawOrderBtn').onclick=resetTrendRawOrder;$('trendExportBtn').onclick=()=>exportEvaluation('trend');$('trendRefreshBtn').onclick=loadAll;$('matrixExportBtn').onclick=exportMatrixView;$('matrixRawOrderBtn').onclick=resetMatrixOrder;bindPeriodSort();bindTrendSort();bindMatrixSort();bindRhSort();['rhKabFilter','rhConditionFilter'].forEach(id=>$(id).addEventListener('change',refreshRhViews));document.querySelectorAll('.rh-category-check').forEach(el=>el.addEventListener('change',refreshRhViews));let rhTimer;const rhLive=()=>{clearTimeout(rhTimer);rhTimer=setTimeout(refreshRhViews,120)};$('rhCommodityFilter').addEventListener('input',rhLive);$('rhCommodityFilter').addEventListener('change',refreshRhViews);setupSearchCombo('rhCommodityFilter',()=>unique(state.rhAll,'commodity'),'Semua komoditas');$('rhSearchFilter').addEventListener('input',rhLive);$('rhPageSize').addEventListener('change',e=>{state.rhPageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPage=1;renderRh()});$('rhPricePageSize').addEventListener('change',e=>{state.rhPricePageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPricePage=1;renderRhPrice()});$('rhPrevPage').onclick=()=>{if(state.rhPage>1){state.rhPage--;renderRh()}};$('rhNextPage').onclick=()=>{state.rhPage++;renderRh()};$('rhPricePrevPage').onclick=()=>{if(state.rhPricePage>1){state.rhPricePage--;renderRhPrice()}};$('rhPriceNextPage').onclick=()=>{state.rhPricePage++;renderRhPrice()};$('rhRawOrderBtn').onclick=resetRhOrder;$('rhPriceRawOrderBtn').onclick=resetRhPriceOrder;$('rhExportBtn').onclick=()=>exportRh('rh');$('rhPriceExportBtn').onclick=()=>exportRh('rhprice');startRhAutoSync();if(logged)loadAll()}
+function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','marketTypeFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));document.querySelectorAll('.change-band-check').forEach(el=>el.addEventListener('change',applyFilters));let filterTimer;const liveFilter=()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,120)};$('commodityFilter').addEventListener('input',()=>{updateQualityDatalist(false);liveFilter()});$('commodityFilter').addEventListener('change',()=>{updateQualityDatalist(true);applyFilters()});$('qualityFilter').addEventListener('input',()=>{state.commodityDetailManual=false;liveFilter()});$('qualityFilter').addEventListener('change',()=>{state.commodityDetailManual=false;applyFilters()});$('searchFilter').addEventListener('input',liveFilter);setupSearchCombo('commodityFilter',()=>unique(state.all,'commodity'),'Semua komoditas',()=>{updateQualityDatalist(true)});setupSearchCombo('qualityFilter',()=>qualityOptionsForCommodity(),'Semua kualitas');$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('periodCategoryFilter').addEventListener('change',()=>{state.periodPage=1;renderPeriod()});$('periodPageSize').addEventListener('change',e=>{state.periodPageSize=e.target.value==='all'?'all':Number(e.target.value);state.periodPage=1;renderPeriod()});$('periodRawOrderBtn').onclick=resetPeriodRawOrder;$('periodExportBtn').onclick=()=>exportEvaluation('period');$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendAllStable')?.addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendPageSize').addEventListener('change',e=>{state.trendPageSize=e.target.value==='all'?'all':Number(e.target.value);state.trendPage=1;renderTrend()});$('trendRawOrderBtn').onclick=resetTrendRawOrder;$('trendExportBtn').onclick=()=>exportEvaluation('trend');$('trendRefreshBtn').onclick=loadAll;$('matrixExportBtn').onclick=exportMatrixView;$('matrixRawOrderBtn').onclick=resetMatrixOrder;bindPeriodSort();bindTrendSort();bindMatrixSort();bindRhSort();['rhKabFilter','rhConditionFilter'].forEach(id=>$(id).addEventListener('change',refreshRhViews));document.querySelectorAll('.rh-category-check').forEach(el=>el.addEventListener('change',refreshRhViews));let rhTimer;const rhLive=()=>{clearTimeout(rhTimer);rhTimer=setTimeout(refreshRhViews,120)};$('rhCommodityFilter').addEventListener('input',rhLive);$('rhCommodityFilter').addEventListener('change',refreshRhViews);setupSearchCombo('rhCommodityFilter',()=>unique(state.rhAll,'commodity'),'Semua komoditas');$('rhSearchFilter').addEventListener('input',rhLive);$('rhPageSize').addEventListener('change',e=>{state.rhPageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPage=1;renderRh()});$('rhPricePageSize').addEventListener('change',e=>{state.rhPricePageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPricePage=1;renderRhPrice()});$('rhPrevPage').onclick=()=>{if(state.rhPage>1){state.rhPage--;renderRh()}};$('rhNextPage').onclick=()=>{state.rhPage++;renderRh()};$('rhPricePrevPage').onclick=()=>{if(state.rhPricePage>1){state.rhPricePage--;renderRhPrice()}};$('rhPriceNextPage').onclick=()=>{state.rhPricePage++;renderRhPrice()};$('rhRawOrderBtn').onclick=resetRhOrder;$('rhPriceRawOrderBtn').onclick=resetRhPriceOrder;$('rhExportBtn').onclick=()=>exportRh('rh');$('rhPriceExportBtn').onclick=()=>exportRh('rhprice');startRhAutoSync();startPriceNoteAutoSync();if(logged)loadAll()}
 document.addEventListener('DOMContentLoaded',init);
 
 window.addEventListener('DOMContentLoaded',initLocalDataPeriod);
