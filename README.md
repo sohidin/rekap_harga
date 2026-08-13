@@ -249,3 +249,27 @@ Perubahan utama:
 6. Modul `Tabulasi RH` dan `Harga RH` tidak diubah.
 
 Karena `Code.gs` ditambah endpoint baru, lakukan **Deploy → Manage deployments → Edit → New version → Deploy** pada Web App yang sama. URL `/exec` tidak perlu diganti bila deployment yang sama diperbarui.
+
+
+## Fix final Keterangan Evaluasi Bulanan/Mingguan — pencarian baris berdasarkan identitas
+
+Perbaikan ini menanggulangi kasus catatan web tidak masuk ke spreadsheet lalu hilang kembali saat sinkronisasi.
+
+Saat menulis Keterangan untuk sheet utama, web sekarang mengirim:
+- Wilayah (A)
+- Kode Komoditas (B)
+- Komoditas (C)
+- Kualitas (F)
+- Pasar (J)
+- Responden (K)
+
+Apps Script memakai nomor baris hanya sebagai hint. Baris harus cocok dengan identitas tersebut sebelum kolom Keterangan ditulis:
+- Mingguan → Y
+- Dwi Mingguan → S
+- bulanan → O
+
+Endpoint `getPriceNotes` juga mengirim identity key sehingga sinkronisasi spreadsheet → web tetap tepat meskipun nomor baris hasil CSV bergeser.
+
+**Tabulasi RH dan Harga RH tidak diubah.**
+
+Karena `Code.gs` berubah, lakukan **Deploy → Manage deployments → Edit → New version → Deploy**, lalu pastikan `CONFIG.appsScriptUrl` menunjuk ke URL `/exec` deployment aktif.

@@ -36,11 +36,16 @@ function doGet(e) {
         if (!sh) throw new Error('Sheet tidak ditemukan: ' + spec.sheet);
         const lastRow = sh.getLastRow();
         if (lastRow < 3) return;
-        const values = sh.getRange(3, spec.col, lastRow - 2, 1).getDisplayValues();
-        values.forEach((r,i) => rows.push({
+
+        // A:K untuk identitas baris; Keterangan dibaca dari kolom sheet masing-masing.
+        const identities = sh.getRange(3, 1, lastRow - 2, 11).getDisplayValues();
+        const notes = sh.getRange(3, spec.col, lastRow - 2, 1).getDisplayValues();
+
+        identities.forEach((r,i) => rows.push({
           sheet:spec.sheet,
           row:i+3,
-          note:String(r[0] == null ? '' : r[0])
+          identityKey:priceIdentityKeyFromRow_(r),
+          note:String(notes[i] && notes[i][0] != null ? notes[i][0] : '')
         }));
       });
       return jsonOrJsonp({
@@ -110,9 +115,16 @@ function updateNote_(data) {
     if (sheetName === 'RH web') {
       targetRow = resolveRhRow_(sh, requestedRow, data.kab, data.commodityCode, data.commodity);
     } else {
-      if (!Number.isInteger(targetRow) || targetRow < 3 || targetRow > sh.getMaxRows()) {
-        throw new Error('Nomor baris tidak valid: ' + requestedRow);
-      }
+      targetRow = resolvePriceRow_(
+        sh,
+        requestedRow,
+        data.kab,
+        data.commodityCode,
+        data.commodity,
+        data.quality,
+        data.market,
+        data.respondent
+      );
     }
 
     const col = ALLOWED_SHEETS[sheetName];
@@ -148,6 +160,81 @@ function updateNote_(data) {
 // RH web dipetakan secara defensif. Web mengirim row hint + identitas baris.
 // Jika row hint meleset (misalnya karena posisi header/range CSV), Apps Script
 // mencari baris yang benar berdasarkan A=wilayah, C=kode komoditas, D=komoditas.
+
+// Untuk sheet harga utama, nomor baris dari CSV dipakai sebagai hint saja.
+// Baris diverifikasi menggunakan A=wilayah, B=kode komoditas, C=komoditas,
+// F=kualitas, J=pasar, K=responden. Jika hint tidak cocok, cari baris yang tepat.
+function resolvePriceRow_(sh, rowHint, kab, commodityCode, commodity, quality, market, respondent) {
+  const expected = [
+    norm_(kab),
+    norm_(commodityCode).replace(/\.0$/, ''),
+    norm_(commodity),
+    norm_(quality),
+    norm_(market),
+    norm_(respondent)
+  ];
+
+  if (Number.isInteger(rowHint) && rowHint >= 3 && rowHint <= sh.getLastRow()) {
+    const vals = sh.getRange(rowHint, 1, 1, 11).getDisplayValues()[0];
+    if (priceIdentityMatches_(vals, expected)) return rowHint;
+  }
+
+  const last = sh.getLastRow();
+  if (last < 3) throw new Error('Sheet ' + sh.getName() + ' tidak memiliki data.');
+
+  const vals = sh.getRange(3, 1, last - 2, 11).getDisplayValues();
+  const matches = [];
+  for (let i = 0; i < vals.length; i++) {
+    if (priceIdentityMatches_(vals[i], expected)) matches.push(i + 3);
+  }
+
+  if (matches.length === 1) return matches[0];
+
+  if (matches.length > 1) {
+    // Jika ada identitas duplikat, pilih baris yang paling dekat dengan row hint.
+    if (Number.isFinite(rowHint)) {
+      matches.sort((a,b)=>Math.abs(a-rowHint)-Math.abs(b-rowHint));
+    }
+    return matches[0];
+  }
+
+  throw new Error(
+    'Baris sumber tidak ditemukan untuk ' + sh.getName() +
+    ' | wilayah=' + expected[0] +
+    ' | kode=' + expected[1] +
+    ' | komoditas=' + expected[2] +
+    ' | kualitas=' + expected[3] +
+    ' | pasar=' + expected[4] +
+    ' | responden=' + expected[5]
+  );
+}
+
+function priceIdentityMatches_(row, expected) {
+  const actual = [
+    norm_(row[0]),
+    norm_(row[1]).replace(/\.0$/, ''),
+    norm_(row[2]),
+    norm_(row[5]),
+    norm_(row[9]),
+    norm_(row[10])
+  ];
+  for (let i = 0; i < actual.length; i++) {
+    if (actual[i] !== expected[i]) return false;
+  }
+  return true;
+}
+
+function priceIdentityKeyFromRow_(row) {
+  return [
+    norm_(row[0]),
+    norm_(row[1]).replace(/\.0$/, ''),
+    norm_(row[2]),
+    norm_(row[5]),
+    norm_(row[9]),
+    norm_(row[10])
+  ].join('¦');
+}
+
 function resolveRhRow_(sh, rowHint, kab, commodityCode, commodity) {
   const k = norm_(kab);
   const code = norm_(commodityCode).replace(/\.0$/, '');

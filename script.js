@@ -284,16 +284,30 @@ async function saveNote(btn){
   try{
     // Memakai JSONP GET agar GitHub Pages menerima respons sukses/gagal nyata
     // dari Apps Script. Pesan sukses hanya muncul setelah setValue + flush selesai.
-    const rhItem=sheet==='RH web' ? (state.rhAll.find(x=>x.rowNumber===row)||{kab:btn.dataset.kab||'',commodityCode:btn.dataset.code||'',commodity:btn.dataset.commodity||''}) : null;
+    const rhItem=sheet==='RH web'
+      ? (state.rhAll.find(x=>x.rowNumber===row)||{kab:btn.dataset.kab||'',commodityCode:btn.dataset.code||'',commodity:btn.dataset.commodity||''})
+      : null;
+    const priceItem=sheet!=='RH web'
+      ? state.all.find(x=>x.sheet===sheet&&x.rowNumber===row)
+      : null;
+
     const result=await gasJsonp({
       action:'updateNote',
       sheet:String(sheet),
       row:String(row),
       note:String(note),
       clear:note===''?'1':'0',
-      kab:rhItem?String(rhItem.kab||''):'',
-      commodityCode:rhItem?String(rhItem.commodityCode||''):'',
-      commodity:rhItem?String(rhItem.commodity||''):'',
+
+      // Identitas RH tetap seperti versi yang sudah berhasil.
+      kab:rhItem?String(rhItem.kab||''):String(priceItem?.kab||''),
+      commodityCode:rhItem?String(rhItem.commodityCode||''):String(priceItem?.commodityCode||''),
+      commodity:rhItem?String(rhItem.commodity||''):String(priceItem?.commodity||''),
+
+      // Identitas tambahan khusus Mingguan / Dwi Mingguan / bulanan.
+      quality:priceItem?String(priceItem.quality||''):'',
+      market:priceItem?String(priceItem.market||''):'',
+      respondent:priceItem?String(priceItem.respondent||''):'',
+
       token:'harga1900',
       ts:String(Date.now())
     },15000);
@@ -307,7 +321,7 @@ async function saveNote(btn){
       updateVisiblePriceNote(sheet,row,note);
       // Baca kembali catatan non-RH sesaat setelah simpan agar kedua menu
       // dan spreadsheet dipastikan memakai nilai yang sama.
-      setTimeout(()=>syncPriceNotesFast(true),250);
+      setTimeout(()=>syncPriceNotesFast(true),800);
     }
 
     if(sheet==='RH web'){
@@ -356,6 +370,18 @@ function updateVisiblePriceNote(sheet,row,note){
   });
 }
 
+
+function priceIdentityKey(x){
+  return [
+    norm(x.kab),
+    norm(x.commodityCode).replace(/\.0$/,''),
+    norm(x.commodity),
+    norm(x.quality),
+    norm(x.market),
+    norm(x.respondent)
+  ].join('¦');
+}
+
 async function syncPriceNotesFast(silent=false){
   const active=document.activeElement;
   // Jangan menimpa teks yang sedang diketik pada Evaluasi Bulanan/Mingguan.
@@ -365,16 +391,24 @@ async function syncPriceNotesFast(silent=false){
     const result=await gasJsonp({action:'getPriceNotes',token:'harga1900',ts:String(Date.now())},8000);
     if(!result||result.ok===false)throw new Error(result?.message||'Respons sinkronisasi Keterangan tidak valid');
 
-    const notes=new Map();
+    const notesByRow=new Map();
+    const notesByIdentity=new Map();
     (result.rows||[]).forEach(r=>{
-      notes.set(`${String(r.sheet)}|${Number(r.row)}`,String(r.note??''));
+      notesByRow.set(`${String(r.sheet)}|${Number(r.row)}`,String(r.note??''));
+      if(r.identityKey)notesByIdentity.set(`${String(r.sheet)}|${String(r.identityKey)}`,String(r.note??''));
     });
 
     let changed=0;
     state.all.forEach(x=>{
-      const key=`${x.sheet}|${x.rowNumber}`;
-      if(notes.has(key)){
-        const note=notes.get(key);
+      const rowKey=`${x.sheet}|${x.rowNumber}`;
+      const identityKey=priceIdentityKey(x);
+      let has=false,note='';
+      if(notesByRow.has(rowKey)){
+        has=true;note=notesByRow.get(rowKey);
+      }else if(identityKey&&notesByIdentity.has(`${x.sheet}|${identityKey}`)){
+        has=true;note=notesByIdentity.get(`${x.sheet}|${identityKey}`);
+      }
+      if(has){
         if(x.note!==note){x.note=note;changed++}
         updateVisiblePriceNote(x.sheet,x.rowNumber,note);
       }
