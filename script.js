@@ -1,6 +1,6 @@
 const CONFIG={
   spreadsheetId:'1To6WfnCyCn8ms7o1KQ5M_UOtvmk2yO1uH50g1rjA8Eg',
-  appsScriptUrl:'https://script.google.com/macros/s/AKfycbzPEBXGe73vNKVfiBD60vJt9qbXOmcjXzT_Xrljb96GJVN09RsPl63poKAPPdCN0udIHA/exec',
+  appsScriptUrl:'https://script.google.com/macros/s/AKfycbxNAxTywGANlRbh719_uuKhNfo57VBpLibY7hwhqI8MLxbxHD5uWxHptEO0S4M1_7LzIQ/exec',
   credentials:{username:'harga1900',password:'harga1900'},
   pageSize:25,
   rhSyncIntervalMs:2000
@@ -88,7 +88,7 @@ async function fetchRhSheet(){
   const text=await res.text(),parsed=Papa.parse(text,{skipEmptyLines:true}).data;if(parsed.length<2)return[];
   return parsed.slice(1).map((r,i)=>({sheet:cfg.name,rowNumber:i+3,rawOrder:i+3,kab:norm(r[cfg.kabIndex]),commodityCode:norm(r[cfg.commodityCodeIndex]).replace(/\.0$/,''),commodity:norm(r[cfg.commodityIndex]),prev:priceNum(r[cfg.prevIndex]),current:priceNum(r[cfg.currentIndex]),rh:priceNum(r[cfg.rhIndex]),note:norm(r[cfg.noteIndex]),noteColumn:cfg.noteColumn})).filter(x=>x.kab||x.commodityCode||x.commodity||Number.isFinite(x.rh));
 }
-async function loadAll(){showStatus('Memuat data harga dan RH...');try{const entries=Object.entries(SHEETS);const [groups,rhRows]=await Promise.all([Promise.all(entries.map(([s,c])=>fetchSheet(s,c))),fetchRhSheet()]);state.all=groups.flat();state.rhAll=rhRows;state.periodPage=1;state.trendPage=1;state.rhPage=1;state.rhPricePage=1;populateFilters();populateRhFilters();applyFilters();$('lastUpdate').textContent=`Diperbarui ${new Date().toLocaleString('id-ID')}`;loadDataPeriod(true);showStatus(`${fmtInt(state.all.length)} observasi harga dan ${fmtInt(state.rhAll.length)} observasi RH berhasil dimuat.`)}catch(e){showStatus(`${e.message}. Pastikan spreadsheet dapat diakses oleh siapa saja yang memiliki link.`,'error')}}
+async function loadAll(){showStatus('Memuat data harga dan RH...');try{const entries=Object.entries(SHEETS);const [groups,rhRows]=await Promise.all([Promise.all(entries.map(([s,c])=>fetchSheet(s,c))),fetchRhSheet()]);state.all=groups.flat();state.rhAll=rhRows;state.periodPage=1;state.trendPage=1;state.rhPage=1;state.rhPricePage=1;populateFilters();populateRhFilters();applyFilters();$('lastUpdate').textContent=`Diperbarui ${new Date().toLocaleString('id-ID')}`;showStatus(`${fmtInt(state.all.length)} observasi harga dan ${fmtInt(state.rhAll.length)} observasi RH berhasil dimuat.`)}catch(e){showStatus(`${e.message}. Pastikan spreadsheet dapat diakses oleh siapa saja yang memiliki link.`,'error')}}
 function populateSelect(id,items,placeholder){const el=$(id);if(!el)return;const old=el.value;el.innerHTML=`<option value="">${placeholder}</option>`+items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if(items.includes(old))el.value=old}
 const searchComboRegistry={};
 function populateDatalist(inputId,listId,items){
@@ -468,7 +468,7 @@ function jsonpAppsScript(params,timeoutMs=5000){
     const script=document.createElement('script');
     let finished=false;
     const cleanup=()=>{try{delete window[callback]}catch(_){window[callback]=undefined}script.remove()};
-    const timer=setTimeout(()=>{if(finished)return;finished=true;cleanup();reject(new Error('Timeout komunikasi dengan Apps Script'))},timeoutMs);
+    const timer=setTimeout(()=>{if(finished)return;finished=true;cleanup();reject(new Error('Timeout sinkronisasi RH'))},timeoutMs);
     window[callback]=data=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();resolve(data)};
     const qs=new URLSearchParams({...params,callback,ts:String(Date.now())});
     script.src=base+'?'+qs.toString();
@@ -524,139 +524,6 @@ function startRhAutoSync(){
 
 function refreshRhViews(){state.rhPage=1;state.rhPricePage=1;renderRh();renderRhPrice()}
 
-
-const DATA_PERIOD_TOKEN='harga1900';
-let currentDataPeriod='';
-
-function formatDataPeriod(value){
-  if(!value)return 'Belum diatur';
-  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
-  if(!m)return value;
-  const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-  return `${Number(m[3])} ${months[Number(m[2])-1]} ${m[1]} • ${m[4]}.${m[5]} WIB`;
-}
-function renderDataPeriod(value){
-  currentDataPeriod=String(value||'');
-  if($('dataPeriodText'))$('dataPeriodText').textContent=formatDataPeriod(currentDataPeriod);
-}
-async function loadDataPeriod(silent=true){
-  try{
-    const result=await jsonpAppsScript({action:'getDataPeriod',token:DATA_PERIOD_TOKEN});
-    if(!result||result.ok===false)throw new Error(result?.message||'Periode data tidak dapat dibaca');
-    renderDataPeriod(result.value||'');
-  }catch(e){if(!silent)showStatus(`Gagal membaca periode data: ${e.message}`,'error')}
-}
-function openDataPeriodModal(){
-  if(!$('dataPeriodModal')||!$('dataPeriodInput'))return;
-  $('dataPeriodInput').value=currentDataPeriod||'';
-  $('dataPeriodModal').classList.remove('hidden');
-  setTimeout(()=>$('dataPeriodInput').focus(),30);
-}
-function closeDataPeriodModal(){$('dataPeriodModal')?.classList.add('hidden')}
-function postDataPeriod(value){
-  return new Promise((resolve,reject)=>{
-    const base=String(CONFIG.appsScriptUrl||'').trim();
-    if(!base||base.includes('PASTE_URL')||!base.endsWith('/exec')){
-      reject(new Error('URL Apps Script belum diatur'));
-      return;
-    }
-
-    const frameName='periodSaveFrame_'+Date.now();
-    const iframe=document.createElement('iframe');
-    iframe.name=frameName;
-    iframe.style.display='none';
-    document.body.appendChild(iframe);
-
-    const form=document.createElement('form');
-    form.method='POST';
-    form.action=base;
-    form.target=frameName;
-    form.style.display='none';
-
-    const fields={
-      action:'updateDataPeriod',
-      token:DATA_PERIOD_TOKEN,
-      value:value
-    };
-    Object.entries(fields).forEach(([name,val])=>{
-      const input=document.createElement('input');
-      input.type='hidden';
-      input.name=name;
-      input.value=String(val);
-      form.appendChild(input);
-    });
-    document.body.appendChild(form);
-
-    let done=false;
-    const cleanup=()=>{
-      setTimeout(()=>{
-        try{form.remove()}catch(_){}
-        try{iframe.remove()}catch(_){}
-      },100);
-    };
-
-    const timer=setTimeout(()=>{
-      if(done)return;
-      done=true;
-      cleanup();
-      resolve(true); // POST mungkin sukses walaupun load event redirect tidak terbaca.
-    },1800);
-
-    iframe.onload=()=>{
-      if(done)return;
-      done=true;
-      clearTimeout(timer);
-      cleanup();
-      resolve(true);
-    };
-
-    try{form.submit()}
-    catch(e){
-      if(!done){
-        done=true;
-        clearTimeout(timer);
-        cleanup();
-        reject(e);
-      }
-    }
-  });
-}
-
-async function verifyDataPeriod(expected){
-  let lastError=null;
-  for(let i=0;i<5;i++){
-    try{
-      const result=await jsonpAppsScript({action:'getDataPeriod',token:DATA_PERIOD_TOKEN},7000);
-      if(result&&result.ok!==false){
-        const actual=String(result.value||'');
-        if(actual===expected)return result;
-      }
-    }catch(e){lastError=e}
-    await new Promise(r=>setTimeout(r,700));
-  }
-  throw lastError||new Error('Nilai periode belum terverifikasi di server');
-}
-
-async function saveDataPeriod(){
-  const value=String($('dataPeriodInput')?.value||'').trim(),btn=$('dataPeriodSave');
-  if(!value){
-    showStatus('Pilih tanggal dan jam periode data terlebih dahulu.','error');
-    return;
-  }
-  if(btn){btn.disabled=true;btn.textContent='Menyimpan...'}
-  try{
-    await postDataPeriod(value);
-    const result=await verifyDataPeriod(value);
-    renderDataPeriod(result.value||value);
-    closeDataPeriodModal();
-    showStatus(`Periode data tersimpan: ${formatDataPeriod(result.value||value)}.`,'success');
-  }catch(e){
-    showStatus(`Gagal menyimpan periode data: ${e.message}`,'error');
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='Simpan Periode'}
-  }
-}
-
 function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));$(`view-${view}`).classList.add('active-view');document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));const isRh=view==='rh'||view==='rhprice';$('globalFilters').classList.toggle('hidden',isRh);$('rhFilters').classList.toggle('hidden',!isRh);const rhCondWrap=$('rhConditionFilterWrap');if(rhCondWrap)rhCondWrap.classList.toggle('hidden',view==='rhprice');const allStableWrap=$('trendAllStableWrap');if(allStableWrap){const showAllStable=view==='trend';allStableWrap.classList.toggle('hidden',!showAllStable);allStableWrap.style.display=showAllStable?'':'none';}const stableLabel=$('changeBandStableLabel');if(stableLabel)stableLabel.textContent=view==='period'?'Tidak ada perubahan harga':'Minimal 1 Minggu Tetap';const titles={dashboard:['Dashboard','Ringkasan perkembangan harga.'],period:['Evaluasi Bulanan','Mingguan, Dwi Mingguan, Bulanan, atau seluruh periode.'],commodity:['Analisis Komoditas × Kualitas','Perbandingan harga menurut komoditas, kualitas, dan wilayah.'],market:['Analisis Pasar','Peringkat pasar berdasarkan perubahan.'],trend:['Evaluasi Mingguan','Deret perubahan harga mingguan secara berurutan dari periode previous menuju current.'],evaluation:['Evaluasi Ringkas','Prioritas verifikasi perubahan harga.'],matrix:['Matriks Komoditas','Seluruh komoditas × kualitas × kabupaten/kota dalam satu tabel analisis.'],rh:['Tabulasi RH','Perbandingan RH antar kabupaten/kota berdasarkan komoditas.'],rhprice:['Harga RH','Previous, Current, RH, dan Keterangan dari sheet RH web.']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];$('sidebar').classList.remove('open')}
-function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('dataPeriodBtn').onclick=openDataPeriodModal;$('dataPeriodClose').onclick=closeDataPeriodModal;$('dataPeriodCancel').onclick=closeDataPeriodModal;$('dataPeriodSave').onclick=saveDataPeriod;$('dataPeriodModal').addEventListener('click',e=>{if(e.target===$('dataPeriodModal'))closeDataPeriodModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDataPeriodModal()});$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','marketTypeFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));document.querySelectorAll('.change-band-check').forEach(el=>el.addEventListener('change',applyFilters));let filterTimer;const liveFilter=()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,120)};$('commodityFilter').addEventListener('input',()=>{updateQualityDatalist(false);liveFilter()});$('commodityFilter').addEventListener('change',()=>{updateQualityDatalist(true);applyFilters()});$('qualityFilter').addEventListener('input',()=>{state.commodityDetailManual=false;liveFilter()});$('qualityFilter').addEventListener('change',()=>{state.commodityDetailManual=false;applyFilters()});$('searchFilter').addEventListener('input',liveFilter);setupSearchCombo('commodityFilter',()=>unique(state.all,'commodity'),'Semua komoditas',()=>{updateQualityDatalist(true)});setupSearchCombo('qualityFilter',()=>qualityOptionsForCommodity(),'Semua kualitas');$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('periodCategoryFilter').addEventListener('change',()=>{state.periodPage=1;renderPeriod()});$('periodPageSize').addEventListener('change',e=>{state.periodPageSize=e.target.value==='all'?'all':Number(e.target.value);state.periodPage=1;renderPeriod()});$('periodRawOrderBtn').onclick=resetPeriodRawOrder;$('periodExportBtn').onclick=()=>exportEvaluation('period');$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendAllStable')?.addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendPageSize').addEventListener('change',e=>{state.trendPageSize=e.target.value==='all'?'all':Number(e.target.value);state.trendPage=1;renderTrend()});$('trendRawOrderBtn').onclick=resetTrendRawOrder;$('trendExportBtn').onclick=()=>exportEvaluation('trend');$('trendRefreshBtn').onclick=loadAll;$('matrixExportBtn').onclick=exportMatrixView;$('matrixRawOrderBtn').onclick=resetMatrixOrder;bindPeriodSort();bindTrendSort();bindMatrixSort();bindRhSort();['rhKabFilter','rhConditionFilter'].forEach(id=>$(id).addEventListener('change',refreshRhViews));document.querySelectorAll('.rh-category-check').forEach(el=>el.addEventListener('change',refreshRhViews));let rhTimer;const rhLive=()=>{clearTimeout(rhTimer);rhTimer=setTimeout(refreshRhViews,120)};$('rhCommodityFilter').addEventListener('input',rhLive);$('rhCommodityFilter').addEventListener('change',refreshRhViews);setupSearchCombo('rhCommodityFilter',()=>unique(state.rhAll,'commodity'),'Semua komoditas');$('rhSearchFilter').addEventListener('input',rhLive);$('rhPageSize').addEventListener('change',e=>{state.rhPageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPage=1;renderRh()});$('rhPricePageSize').addEventListener('change',e=>{state.rhPricePageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPricePage=1;renderRhPrice()});$('rhPrevPage').onclick=()=>{if(state.rhPage>1){state.rhPage--;renderRh()}};$('rhNextPage').onclick=()=>{state.rhPage++;renderRh()};$('rhPricePrevPage').onclick=()=>{if(state.rhPricePage>1){state.rhPricePage--;renderRhPrice()}};$('rhPriceNextPage').onclick=()=>{state.rhPricePage++;renderRhPrice()};$('rhRawOrderBtn').onclick=resetRhOrder;$('rhPriceRawOrderBtn').onclick=resetRhPriceOrder;$('rhExportBtn').onclick=()=>exportRh('rh');$('rhPriceExportBtn').onclick=()=>exportRh('rhprice');startRhAutoSync();if(logged)loadAll()}
+function init(){const logged=sessionStorage.getItem('hargaLogin')==='1';$('loginScreen').classList.toggle('hidden',logged);$('app').classList.toggle('hidden',!logged);$('loginForm').addEventListener('submit',e=>{e.preventDefault();if($('username').value===CONFIG.credentials.username&&$('password').value===CONFIG.credentials.password){sessionStorage.setItem('hargaLogin','1');$('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');loadAll()}else{$('loginError').textContent='Username atau password salah.';$('loginError').classList.remove('hidden')}});$('logoutBtn').onclick=()=>{sessionStorage.removeItem('hargaLogin');location.reload()};$('refreshBtn').onclick=loadAll;$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));['periodFilter','kabFilter','marketTypeFilter'].forEach(id=>$(id).addEventListener('change',applyFilters));document.querySelectorAll('.change-band-check').forEach(el=>el.addEventListener('change',applyFilters));let filterTimer;const liveFilter=()=>{clearTimeout(filterTimer);filterTimer=setTimeout(applyFilters,120)};$('commodityFilter').addEventListener('input',()=>{updateQualityDatalist(false);liveFilter()});$('commodityFilter').addEventListener('change',()=>{updateQualityDatalist(true);applyFilters()});$('qualityFilter').addEventListener('input',()=>{state.commodityDetailManual=false;liveFilter()});$('qualityFilter').addEventListener('change',()=>{state.commodityDetailManual=false;applyFilters()});$('searchFilter').addEventListener('input',liveFilter);setupSearchCombo('commodityFilter',()=>unique(state.all,'commodity'),'Semua komoditas',()=>{updateQualityDatalist(true)});setupSearchCombo('qualityFilter',()=>qualityOptionsForCommodity(),'Semua kualitas');$('periodPrevPage').onclick=()=>{if(state.periodPage>1){state.periodPage--;renderPeriod()}};$('periodNextPage').onclick=()=>{state.periodPage++;renderPeriod()};$('periodCategoryFilter').addEventListener('change',()=>{state.periodPage=1;renderPeriod()});$('periodPageSize').addEventListener('change',e=>{state.periodPageSize=e.target.value==='all'?'all':Number(e.target.value);state.periodPage=1;renderPeriod()});$('periodRawOrderBtn').onclick=resetPeriodRawOrder;$('periodExportBtn').onclick=()=>exportEvaluation('period');$('trendPrevPage').onclick=()=>{if(state.trendPage>1){state.trendPage--;renderTrend()}};$('trendNextPage').onclick=()=>{state.trendPage++;renderTrend()};$('trendAllStable')?.addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendCategoryFilter').addEventListener('change',()=>{state.trendPage=1;renderTrend()});$('trendPageSize').addEventListener('change',e=>{state.trendPageSize=e.target.value==='all'?'all':Number(e.target.value);state.trendPage=1;renderTrend()});$('trendRawOrderBtn').onclick=resetTrendRawOrder;$('trendExportBtn').onclick=()=>exportEvaluation('trend');$('trendRefreshBtn').onclick=loadAll;$('matrixExportBtn').onclick=exportMatrixView;$('matrixRawOrderBtn').onclick=resetMatrixOrder;bindPeriodSort();bindTrendSort();bindMatrixSort();bindRhSort();['rhKabFilter','rhConditionFilter'].forEach(id=>$(id).addEventListener('change',refreshRhViews));document.querySelectorAll('.rh-category-check').forEach(el=>el.addEventListener('change',refreshRhViews));let rhTimer;const rhLive=()=>{clearTimeout(rhTimer);rhTimer=setTimeout(refreshRhViews,120)};$('rhCommodityFilter').addEventListener('input',rhLive);$('rhCommodityFilter').addEventListener('change',refreshRhViews);setupSearchCombo('rhCommodityFilter',()=>unique(state.rhAll,'commodity'),'Semua komoditas');$('rhSearchFilter').addEventListener('input',rhLive);$('rhPageSize').addEventListener('change',e=>{state.rhPageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPage=1;renderRh()});$('rhPricePageSize').addEventListener('change',e=>{state.rhPricePageSize=e.target.value==='all'?'all':Number(e.target.value);state.rhPricePage=1;renderRhPrice()});$('rhPrevPage').onclick=()=>{if(state.rhPage>1){state.rhPage--;renderRh()}};$('rhNextPage').onclick=()=>{state.rhPage++;renderRh()};$('rhPricePrevPage').onclick=()=>{if(state.rhPricePage>1){state.rhPricePage--;renderRhPrice()}};$('rhPriceNextPage').onclick=()=>{state.rhPricePage++;renderRhPrice()};$('rhRawOrderBtn').onclick=resetRhOrder;$('rhPriceRawOrderBtn').onclick=resetRhPriceOrder;$('rhExportBtn').onclick=()=>exportRh('rh');$('rhPriceExportBtn').onclick=()=>exportRh('rhprice');startRhAutoSync();if(logged)loadAll()}
 document.addEventListener('DOMContentLoaded',init);

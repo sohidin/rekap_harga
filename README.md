@@ -221,13 +221,3 @@ Versi ini memperbaiki benturan ID textarea antar menu. `Harga RH` sekarang memak
 ## Revisi terbaru
 - Evaluasi Bulanan: filter `Semua Minggu Tidak Berubah` tidak ditampilkan dan label `Minimal 1 Minggu Tetap` menjadi `Tidak ada perubahan harga` khusus pada menu ini. Evaluasi Mingguan tetap memakai label/fitur sebelumnya.
 - Menu Komoditas: baris pada tabel Ringkasan seluruh kualitas sekarang dapat diklik untuk mengubah kualitas detail. Statistik wilayah, KPI, dan grafik kualitas terpilih langsung mengikuti baris yang diklik tanpa harus mengubah filter Kualitas global.
-
-
-## Periode Data
-Papan **PERIODE DATA** di kanan atas dapat diedit dengan tanggal dan jam (WIB). Nilai disimpan global melalui Apps Script PropertiesService sehingga sama untuk seluruh pengguna dan tetap tersimpan setelah refresh. Deploy ulang `Code.gs` sebagai **New version**.
-
-
-## Fix penyimpanan Periode Data
-Versi ini menyimpan Periode Data melalui `POST` ke Apps Script lalu melakukan verifikasi ulang melalui `getDataPeriod`. Ini menghindari timeout JSONP saat melakukan operasi tulis.
-
-**Wajib:** ganti `Code.gs`, lalu Deploy → Manage deployments → Edit → New version → Deploy. Setelah itu timpa `script.js` di GitHub.
