@@ -279,3 +279,19 @@ Karena `Code.gs` berubah, lakukan **Deploy → Manage deployments → Edit → N
 Header tabel dan kepadatan tampilan diseragamkan untuk Evaluasi Bulanan, Evaluasi Mingguan, Komoditas, Matriks Komoditas, Pasar, Evaluasi Ringkas, Tabulasi RH, dan Harga RH.
 
 Tidak ada perubahan pada logika JavaScript, Code.gs, koneksi spreadsheet, filter, atau sinkronisasi Keterangan.
+
+
+## Perbaikan posisi Dwi Mingguan pada Evaluasi Mingguan
+
+Timeline Mingguan dan Dwi Mingguan sekarang menggunakan grid waktu yang sama.
+
+Posisi:
+- Prev M1 Dwi Mingguan tepat di bawah Prev M1 Mingguan
+- Prev M3 Dwi Mingguan tepat di bawah Prev M3 Mingguan
+- Current M1 Dwi Mingguan tepat di bawah Current M1 Mingguan
+- Current M3 Dwi Mingguan tepat di bawah Current M3 Mingguan
+
+Slot M2, M4, M5 yang tidak dimiliki Dwi Mingguan dibiarkan kosong sehingga jarak antarperiode mencerminkan waktu sebenarnya. Sparkline Dwi Mingguan juga menggunakan posisi slot yang sama.
+
+Perubahan hanya pada `script.js`, `style.css`, dan cache-busting `index.html`.
+`Code.gs`, koneksi spreadsheet, sinkronisasi Keterangan, modul RH, dan fungsi lainnya tidak diubah.

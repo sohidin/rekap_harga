@@ -495,11 +495,28 @@ function compactMoney(v){
   if(!Number.isFinite(v))return '–';
   return new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(v);
 }
-function sparklineSvg(points){
+function timelineSlot(label){
+  const slots={
+    'Prev M1':0,'Prev M2':1,'Prev M3':2,'Prev M4':3,'Prev M5':4,
+    'Current M1':5,'Current M2':6,'Current M3':7,'Current M4':8,'Current M5':9,
+    'Previous':0,'Current':9
+  };
+  return Object.prototype.hasOwnProperty.call(slots,label)?slots[label]:null;
+}
+function sparklineSvg(points,aligned=false){
   if(!points||points.length<2)return '<div class="spark-empty">Data belum cukup untuk grafik</div>';
   const values=points.map(p=>p.value),min=Math.min(...values),max=Math.max(...values),range=max-min||1;
   const w=520,h=66,padX=10,padY=9;
-  const xy=values.map((v,i)=>({x:padX+i*((w-padX*2)/(values.length-1)),y:padY+(max-v)/range*(h-padY*2)}));
+  const xy=values.map((v,i)=>{
+    let ratio;
+    if(aligned){
+      const slot=timelineSlot(points[i].label);
+      ratio=slot==null?(points.length===1?0:i/(points.length-1)):slot/9;
+    }else{
+      ratio=points.length===1?0:i/(points.length-1);
+    }
+    return{x:padX+ratio*(w-padX*2),y:padY+(max-v)/range*(h-padY*2)};
+  });
   const line=xy.map((p,i)=>`${i?'L':'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
   const area=`${line} L ${xy[xy.length-1].x.toFixed(1)} ${h-padY} L ${xy[0].x.toFixed(1)} ${h-padY} Z`;
   const dots=xy.map((p,i)=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2"><title>${esc(points[i].label)}: ${fmtMoney(points[i].value)}</title></circle>`).join('');
@@ -509,13 +526,43 @@ function movementClass(c){return !Number.isFinite(c)||Math.abs(c)<.005?'stable':
 function priceTimelineHtml(x){
   const points=x.timelinePoints||[],trans=x.series||[];
   if(!points.length)return '<div class="timeline-empty">Tidak ada harga valid.</div>';
-  let html=`<div class="price-visual"><div class="spark-wrap">${sparklineSvg(points)}</div><div class="price-timeline points-${points.length}">`;
-  points.forEach((p,i)=>{
-    const t=i?trans[i-1]:null,cls=t?movementClass(t.change):'start',cat=t?.category?.className||'';
-    if(i){html+=`<div class="price-connector ${cls}"><i>→</i></div>`}
-    html+=`<div class="price-node ${cls} ${cat}"><span class="point-label">${esc(p.label)}</span><strong>Rp ${compactMoney(p.value)}</strong>${t?`<small>${Math.abs(t.change)<.005?'— 0,00%':`${t.change>0?'▲':'▼'} ${fmtPct(t.change)}`}</small>`:'<small class="base-label">Harga dasar</small>'}</div>`;
-  });
-  return html+'</div></div>';
+
+  // Mingguan dan Dwi Mingguan memakai 10 slot waktu yang sama:
+  // Prev M1–M5 = slot 0–4, Current M1–M5 = slot 5–9.
+  // Dengan cara ini Dwi Mingguan (M1 dan M3) tetap berada tepat di bawah
+  // posisi M1 dan M3 Mingguan, sedangkan slot yang tidak ada dibiarkan kosong.
+  const aligned=x.sheet==='Mingguan'||x.sheet==='Dwi Mingguan';
+  const periodClass=x.sheet==='Dwi Mingguan'?'timeline-dwi':x.sheet==='Mingguan'?'timeline-weekly':'timeline-regular';
+
+  let html=`<div class="price-visual ${periodClass}"><div class="spark-wrap">${sparklineSvg(points,aligned)}</div>`;
+
+  if(aligned){
+    html+=`<div class="price-timeline timeline-slot-grid ${periodClass}">`;
+    points.forEach((p,i)=>{
+      const slot=timelineSlot(p.label);
+      const t=i?trans[i-1]:null,cls=t?movementClass(t.change):'start',cat=t?.category?.className||'';
+      const nodeCol=(slot==null?i:slot)*2+1;
+
+      if(i){
+        const prevSlot=timelineSlot(points[i-1].label);
+        const prevCol=(prevSlot==null?i-1:prevSlot)*2+1;
+        html+=`<div class="price-connector slot-connector ${cls}" style="grid-column:${prevCol+1}/${nodeCol};"><i>→</i></div>`;
+      }
+
+      html+=`<div class="price-node ${cls} ${cat}" style="grid-column:${nodeCol};"><span class="point-label">${esc(p.label)}</span><strong>Rp ${compactMoney(p.value)}</strong>${t?`<small>${Math.abs(t.change)<.005?'— 0,00%':`${t.change>0?'▲':'▼'} ${fmtPct(t.change)}`}</small>`:'<small class="base-label">Harga dasar</small>'}</div>`;
+    });
+    html+='</div>';
+  }else{
+    html+=`<div class="price-timeline points-${points.length}">`;
+    points.forEach((p,i)=>{
+      const t=i?trans[i-1]:null,cls=t?movementClass(t.change):'start',cat=t?.category?.className||'';
+      if(i)html+=`<div class="price-connector ${cls}"><i>→</i></div>`;
+      html+=`<div class="price-node ${cls} ${cat}"><span class="point-label">${esc(p.label)}</span><strong>Rp ${compactMoney(p.value)}</strong>${t?`<small>${Math.abs(t.change)<.005?'— 0,00%':`${t.change>0?'▲':'▼'} ${fmtPct(t.change)}`}</small>`:'<small class="base-label">Harga dasar</small>'}</div>`;
+    });
+    html+='</div>';
+  }
+
+  return html+'</div>';
 }
 function trendStatsHtml(x){
   const s=(x.series||[]).filter(v=>v.valid),p=x.timelinePoints||[];
