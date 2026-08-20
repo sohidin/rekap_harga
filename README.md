@@ -273,3 +273,9 @@ Endpoint `getPriceNotes` juga mengirim identity key sehingga sinkronisasi spread
 **Tabulasi RH dan Harga RH tidak diubah.**
 
 Karena `Code.gs` berubah, lakukan **Deploy → Manage deployments → Edit → New version → Deploy**, lalu pastikan `CONFIG.appsScriptUrl` menunjuk ke URL `/exec` deployment aktif.
+
+
+## Konsistensi visual seluruh menu
+Header tabel dan kepadatan tampilan diseragamkan untuk Evaluasi Bulanan, Evaluasi Mingguan, Komoditas, Matriks Komoditas, Pasar, Evaluasi Ringkas, Tabulasi RH, dan Harga RH.
+
+Tidak ada perubahan pada logika JavaScript, Code.gs, koneksi spreadsheet, filter, atau sinkronisasi Keterangan.
