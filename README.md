@@ -352,3 +352,19 @@ Khusus menu **Tabulasi RH**:
 - Filter dan sort Status Catatan tetap berfungsi.
 
 Tidak ada perubahan pada `script.js`, `Code.gs`, koneksi spreadsheet, sinkronisasi Keterangan, atau menu lainnya.
+
+
+## Perbaikan Tabulasi RH — Arah Berbeda Sendiri (v3)
+
+Logika final:
+
+- `100, 100, 100, 101` → **101** = Arah Berbeda Sendiri.
+- `100, 100, 100, 93` → **93** = Arah Berbeda Sendiri.
+- `100, 100, 96, 99.85` → **tidak ada** Arah Berbeda Sendiri.
+- `101, 98, 97, 96` → **101** = Arah Berbeda Sendiri.
+- `99, 102, 103, 104` → **99** = Arah Berbeda Sendiri.
+- Nilai `100` bersifat netral dan tidak diberi warna ungu hanya karena nilai lain berbeda arah.
+
+Perubahan hanya pada logika `script.js` Tabulasi RH dan cache-busting di `index.html`.
+Fitur Status Catatan, ukuran kolom, filter, sort, download, sinkronisasi Keterangan,
+dan menu lain tetap mengikuti versi sebelumnya.
