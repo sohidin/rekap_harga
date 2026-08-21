@@ -368,3 +368,26 @@ Logika final:
 Perubahan hanya pada logika `script.js` Tabulasi RH dan cache-busting di `index.html`.
 Fitur Status Catatan, ukuran kolom, filter, sort, download, sinkronisasi Keterangan,
 dan menu lain tetap mengikuti versi sebelumnya.
+
+
+## Logika Final Arah Berbeda Sendiri v4
+
+Nilai `100` diperlakukan sebagai nilai netral dan tidak pernah diberi highlight ungu.
+
+Aturan final:
+- `100, 100, 100, 101` → 101 ungu.
+- `100, 100, 100, 93` → 93 ungu.
+- `99, 103, 100, 99` → 103 ungu.
+- `100.41, 100.10, 99, 100` → 99 ungu.
+- `101, 98, 97, 96` → 101 ungu.
+- `99, 102, 103, 104` → 99 ungu.
+- `100, 100, 96, 99.85` → tidak ada ungu.
+- `100, 100, 101, 99` → tidak ada ungu.
+
+Secara umum, setelah nilai 100 diabaikan, jika satu wilayah berada sendirian
+di satu arah sementara minimal dua wilayah lain berada di arah sebaliknya,
+wilayah yang sendirian ditandai **Arah Berbeda Sendiri**.
+
+Paket ini tetap mempertahankan seluruh fitur versi sebelumnya:
+Status Catatan, filter, sort, download, layout kolom RH, sinkronisasi Keterangan,
+Evaluasi Bulanan/Mingguan, Komoditas, Matriks Komoditas, Pasar, dan Harga RH.

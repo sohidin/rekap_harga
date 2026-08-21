@@ -667,27 +667,29 @@ function rhPivotRows(){
       .filter(x=>Number.isFinite(x.rh));
 
     /*
-      LOGIKA ARAH BERBEDA SENDIRI
-      ---------------------------
-      A. 3 wilayah = 100 dan 1 wilayah != 100
-         -> wilayah yang != 100 adalah arah berbeda sendiri.
+      LOGIKA FINAL "ARAH BERBEDA SENDIRI"
+      ====================================
+      Nilai 100 dianggap NETRAL dan TIDAK pernah menjadi outlier.
 
-      B. 1 wilayah >100 dan 3 wilayah <100
-         -> wilayah >100 adalah arah berbeda sendiri.
+      Kondisi yang dianggap Arah Berbeda Sendiri:
+      1. 3 wilayah = 100 dan 1 wilayah != 100
+         -> wilayah yang !=100 menjadi outlier.
 
-      C. 1 wilayah <100 dan 3 wilayah >100
-         -> wilayah <100 adalah arah berbeda sendiri.
+      2. Setelah nilai 100 diabaikan:
+         - tepat 1 wilayah >100 dan minimal 2 wilayah <100
+           -> wilayah >100 menjadi outlier.
+         - tepat 1 wilayah <100 dan minimal 2 wilayah >100
+           -> wilayah <100 menjadi outlier.
 
-      D. Nilai 100 adalah NETRAL.
-         Nilai 100 tidak boleh diberi highlight ungu hanya karena
-         wilayah lain berada di atas/bawah 100.
-
-      Contoh:
-      100,100,100,101   -> 101 ungu
-      100,100,100,93    -> 93 ungu
-      100,100,96,99.85  -> tidak ada ungu
-      101,98,97,96      -> 101 ungu
-      99,102,103,104    -> 99 ungu
+      Dengan demikian:
+      99, 103, 100, 99       -> 103 ungu
+      100.41,100.10,99,100   -> 99 ungu
+      100,100,100,101        -> 101 ungu
+      100,100,100,93         -> 93 ungu
+      100,100,96,99.85       -> tidak ada ungu
+      100,100,101,99         -> tidak ada ungu
+      101,98,97,96           -> 101 ungu
+      99,102,103,104         -> 99 ungu
     */
     if(validKabValues.length===4){
       const equal100=validKabValues.filter(x=>Math.abs(x.rh-100)<1e-9);
@@ -697,9 +699,9 @@ function rhPivotRows(){
       if(equal100.length===3){
         const different=validKabValues.find(x=>Math.abs(x.rh-100)>=1e-9);
         outlierKab=different?.kab||'';
-      }else if(above100.length===1 && below100.length===3){
+      }else if(above100.length===1 && below100.length>=2){
         outlierKab=above100[0].kab;
-      }else if(below100.length===1 && above100.length===3){
+      }else if(below100.length===1 && above100.length>=2){
         outlierKab=below100[0].kab;
       }
     }
