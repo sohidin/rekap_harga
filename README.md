@@ -295,3 +295,46 @@ Slot M2, M4, M5 yang tidak dimiliki Dwi Mingguan dibiarkan kosong sehingga jarak
 
 Perubahan hanya pada `script.js`, `style.css`, dan cache-busting `index.html`.
 `Code.gs`, koneksi spreadsheet, sinkronisasi Keterangan, modul RH, dan fungsi lainnya tidak diubah.
+
+
+## Perbaikan khusus Evaluasi Mingguan — Keterangan lebih tinggi
+Kotak Keterangan pada menu Evaluasi Mingguan dibuat lebih tinggi agar mendekati tinggi kolom Ringkasan Tren di sebelah kiri, dari bagian Awal → Terakhir sampai Perubahan Terbesar.
+
+Perubahan hanya pada `style.css` dan cache-busting `index.html`.
+Menu lain, `script.js`, `Code.gs`, koneksi spreadsheet, serta sinkronisasi Keterangan tidak diubah.
+
+
+## Tabulasi RH — Status Catatan
+Khusus menu **Tabulasi RH** ditambahkan kolom **Status Catatan**.
+
+Kolom ini menampilkan status catatan untuk wilayah 1902, 1903, 1906, dan 1971:
+- ✓ = ada catatan
+- × = belum ada catatan
+- – = tidak ada data wilayah
+
+Kolom dapat di-sort berdasarkan jumlah wilayah yang memiliki catatan.
+
+Filter **Status Catatan**:
+- Semua status
+- Ada catatan (minimal 1 wilayah)
+- Tidak ada catatan
+- Semua wilayah ada catatan
+- Ada catatan di 1902 / 1903 / 1906 / 1971
+
+Filter ini hanya tampil pada Tabulasi RH dan disembunyikan pada Harga RH.
+Export Tabulasi RH juga memuat jumlah dan daftar wilayah yang memiliki catatan.
+
+Tidak ada perubahan pada `Code.gs` maupun mekanisme sinkronisasi RH.
+
+
+## Tabulasi RH — Kotak nilai lebih compact
+Khusus pada menu Tabulasi RH, kotak nilai RH untuk wilayah 1902, 1903, 1906, dan 1971 diperkecil lebarnya agar matriks tidak terlalu melebar.
+
+Informasi berikut tetap dipertahankan:
+- Nilai RH
+- indikator di atas / di bawah 100
+- tombol/indikator Keterangan
+- status ada/tidaknya catatan
+- filter dan sort Status Catatan
+
+Perubahan hanya pada tampilan CSS Tabulasi RH.

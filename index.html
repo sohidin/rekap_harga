@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260820-dwi-align-v1">
+  <link rel="stylesheet" href="style.css?v=20260821-rh-compact-cards-v1">
 </head>
 <body>
 <div id="loginScreen" class="login-screen">
@@ -139,6 +139,7 @@
       <label>Wilayah<select id="rhKabFilter"><option value="">Semua wilayah</option><option value="1902">1902</option><option value="1903">1903</option><option value="1906">1906</option><option value="1971">1971</option></select></label>
       <label>Komoditas<div class="searchable-combo"><input id="rhCommodityFilter" list="rhCommodityFilterList" placeholder="Cari nama komoditas (kolom D)" autocomplete="off"><datalist id="rhCommodityFilterList"></datalist></div></label>
       <label id="rhConditionFilterWrap">Kondisi Antarwilayah<select id="rhConditionFilter"><option value="">Semua kondisi</option><option value="outlier">Ada arah berbeda sendiri</option><option value="mixed">Campuran &gt;100 dan &lt;100</option><option value="all-up">Seluruh RH &gt;100</option><option value="all-down">Seluruh RH &lt;100</option><option value="has-100">Ada RH =100</option></select></label>
+      <label id="rhNoteFilterWrap">Status Catatan<select id="rhNoteFilter"><option value="">Semua status</option><option value="has-note">Ada catatan (minimal 1 wilayah)</option><option value="no-note">Tidak ada catatan</option><option value="all-note">Semua wilayah ada catatan</option><option value="kab-1902">Ada catatan di 1902</option><option value="kab-1903">Ada catatan di 1903</option><option value="kab-1906">Ada catatan di 1906</option><option value="kab-1971">Ada catatan di 1971</option></select></label>
       <label class="search">Pencarian<input id="rhSearchFilter" type="search" placeholder="Kode, komoditas, keterangan"></label>
       <div class="rh-class-filter"><span class="rh-filter-title">Klasifikasi nilai RH <small>(bisa pilih lebih dari satu; tanpa pilihan = semua)</small></span><div class="rh-filter-chips">
         <label class="filter-chip"><input type="checkbox" class="rh-category-check" value="eq100"> RH = 100</label>
@@ -161,7 +162,7 @@
       <article id="rhExportArea" class="panel">
         <div class="panel-head period-toolbar"><div><h3>Matriks RH</h3><p>Klik judul kolom untuk sort. Keterangan disimpan ke kolom H pada baris sumber masing-masing kabupaten/kota.</p></div><div class="trend-toolbar-controls"><label>Jumlah baris<select id="rhPageSize" class="page-size-select"><option value="10">10 baris</option><option value="25" selected>25 baris</option><option value="50">50 baris</option><option value="100">100 baris</option><option value="250">250 baris</option><option value="500">500 baris</option><option value="all">Semua</option></select></label><button id="rhRawOrderBtn" class="btn secondary raw-order-btn" type="button">↺ Urutan Raw Data</button><div class="export-control"><select id="rhExportFormat" class="page-size-select"><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (.csv)</option><option value="pdf">PDF (.pdf)</option><option value="png">Image (.png)</option></select><button id="rhExportBtn" class="btn primary export-btn" type="button">↓ Download</button></div></div></div>
         <div class="rh-legend"><span><i class="rh-dot rh-up"></i> RH &gt;100</span><span><i class="rh-dot rh-down"></i> RH &lt;100</span><span><i class="rh-dot rh-neutral"></i> RH =100</span><span><i class="rh-dot rh-outlier"></i> Arah berbeda sendiri</span></div>
-        <div class="table-wrap large"><table id="rhTable" class="rh-table"><thead><tr><th data-rh-sort="rawOrder">No</th><th data-rh-sort="commodityCode">Kode Komoditas</th><th data-rh-sort="commodity">Komoditas</th><th data-rh-sort="1902" class="num">1902</th><th data-rh-sort="1903" class="num">1903</th><th data-rh-sort="1906" class="num">1906</th><th data-rh-sort="1971" class="num">1971</th></tr></thead><tbody id="rhTableBody"></tbody></table></div>
+        <div class="table-wrap large"><table id="rhTable" class="rh-table"><thead><tr><th data-rh-sort="rawOrder">No</th><th data-rh-sort="commodityCode">Kode Komoditas</th><th data-rh-sort="commodity">Komoditas</th><th data-rh-sort="noteCount" class="rh-note-status-head">Status Catatan</th><th data-rh-sort="1902" class="num">1902</th><th data-rh-sort="1903" class="num">1903</th><th data-rh-sort="1906" class="num">1906</th><th data-rh-sort="1971" class="num">1971</th></tr></thead><tbody id="rhTableBody"></tbody></table></div>
         <div class="pagination"><button id="rhPrevPage" class="btn secondary">← Sebelumnya</button><span id="rhPageInfo">Halaman 1</span><button id="rhNextPage" class="btn secondary">Berikutnya →</button></div>
       </article>
     </section>
@@ -193,7 +194,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="script.js?v=20260820-dwi-align-v1"></script>
+<script src="script.js?v=20260821-rh-note-status-v1"></script>
 
   <div id="dataPeriodModal" class="period-modal hidden" role="dialog" aria-modal="true" aria-labelledby="dataPeriodModalTitle">
     <div class="period-modal-card">
