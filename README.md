@@ -338,3 +338,17 @@ Informasi berikut tetap dipertahankan:
 - filter dan sort Status Catatan
 
 Perubahan hanya pada tampilan CSS Tabulasi RH.
+
+
+## Tabulasi RH — Penyesuaian lebar kolom
+Khusus menu **Tabulasi RH**:
+
+- Kolom **Komoditas** dipersempit.
+- Nama komoditas panjang otomatis membungkus ke beberapa baris.
+- Kolom **Status Catatan** diperlebar.
+- Chip 1902 / 1903 / 1906 / 1971 dibuat lebih lega.
+- Ringkasan seperti `2 dari 4 wilayah` tetap ditampilkan.
+- Kotak nilai RH tetap compact seperti versi sebelumnya.
+- Filter dan sort Status Catatan tetap berfungsi.
+
+Tidak ada perubahan pada `script.js`, `Code.gs`, koneksi spreadsheet, sinkronisasi Keterangan, atau menu lainnya.

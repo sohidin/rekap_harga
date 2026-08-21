@@ -573,3 +573,136 @@
     max-width:138px;
   }
 }
+
+
+/* =========================================================
+   KHUSUS TABULASI RH
+   Kolom Komoditas lebih sempit, Status Catatan lebih lega
+   ========================================================= */
+
+/* NO */
+#rhExportArea table th:nth-child(1),
+#rhExportArea table td:nth-child(1){
+  width:42px;
+  min-width:42px;
+  max-width:42px;
+}
+
+/* Kode Komoditas */
+#rhExportArea table th:nth-child(2),
+#rhExportArea table td:nth-child(2){
+  width:115px;
+  min-width:115px;
+  max-width:115px;
+}
+
+/* Komoditas: dipersempit, teks panjang otomatis wrap */
+#rhExportArea table th:nth-child(3),
+#rhExportArea table td:nth-child(3){
+  width:185px;
+  min-width:185px;
+  max-width:185px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  hyphens:auto;
+  line-height:1.35;
+}
+
+/* Nama komoditas tetap jelas dan tidak melebar */
+#rhExportArea table td:nth-child(3) strong{
+  display:block;
+  max-width:170px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  line-height:1.35;
+}
+
+/* Status Catatan dibuat lebih lebar */
+#rhExportArea table th:nth-child(4),
+#rhExportArea table td:nth-child(4){
+  width:280px;
+  min-width:280px;
+  max-width:280px;
+}
+
+/* Area status catatan lebih lega */
+#rhExportArea .rh-note-status{
+  width:100%;
+  min-width:250px;
+  max-width:260px;
+  gap:8px;
+}
+
+/* Chip wilayah sedikit lebih besar dan mudah dibaca */
+#rhExportArea .rh-note-chip-row{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(52px,1fr));
+  gap:6px;
+  width:100%;
+}
+
+#rhExportArea .rh-note-chip{
+  min-width:0;
+  width:100%;
+  padding:6px 7px;
+  font-size:9px;
+  border-radius:8px;
+}
+
+/* Ringkasan jumlah wilayah dibuat lebih menonjol */
+#rhExportArea .rh-note-status small{
+  font-size:9.5px;
+  font-weight:800;
+  margin-top:1px;
+}
+
+/* Kolom wilayah RH tetap compact */
+#rhExportArea table th:nth-child(n+5),
+#rhExportArea table td:nth-child(n+5){
+  min-width:155px;
+  width:155px;
+}
+
+/* Total tabel dibuat lebih proporsional */
+#rhExportArea table{
+  min-width:1125px;
+}
+
+/* Header komoditas dan status catatan tetap rapi */
+#rhExportArea table thead th:nth-child(3),
+#rhExportArea table thead th:nth-child(4){
+  white-space:normal;
+  line-height:1.25;
+}
+
+/* Responsif */
+@media(max-width:1250px){
+  #rhExportArea table th:nth-child(3),
+  #rhExportArea table td:nth-child(3){
+    width:165px;
+    min-width:165px;
+    max-width:165px;
+  }
+
+  #rhExportArea table td:nth-child(3) strong{
+    max-width:150px;
+  }
+
+  #rhExportArea table th:nth-child(4),
+  #rhExportArea table td:nth-child(4){
+    width:255px;
+    min-width:255px;
+    max-width:255px;
+  }
+
+  #rhExportArea .rh-note-status{
+    min-width:225px;
+    max-width:235px;
+  }
+
+  #rhExportArea .rh-note-chip-row{
+    grid-template-columns:repeat(2,minmax(72px,1fr));
+  }
+}
