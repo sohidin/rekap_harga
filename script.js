@@ -696,9 +696,25 @@ function rhPivotRows(){
       const above100=validKabValues.filter(x=>x.rh>100);
       const below100=validKabValues.filter(x=>x.rh<100);
 
+      /*
+        LOGIKA FINAL v5
+
+        - Tepat 3 nilai = 100:
+          satu nilai yang !=100 menjadi ARAH BERBEDA SENDIRI.
+
+        - Tepat 2 nilai = 100:
+          TIDAK ADA warna ungu sama sekali, apa pun dua nilai lainnya.
+
+        - Selain itu:
+          nilai 100 dianggap netral. Setelah 100 diabaikan,
+          jika tepat 1 wilayah berada di satu arah dan minimal 2 wilayah
+          berada di arah berlawanan, wilayah yang sendirian menjadi outlier.
+      */
       if(equal100.length===3){
         const different=validKabValues.find(x=>Math.abs(x.rh-100)>=1e-9);
         outlierKab=different?.kab||'';
+      }else if(equal100.length===2){
+        outlierKab='';
       }else if(above100.length===1 && below100.length>=2){
         outlierKab=above100[0].kab;
       }else if(below100.length===1 && above100.length>=2){

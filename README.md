@@ -391,3 +391,22 @@ wilayah yang sendirian ditandai **Arah Berbeda Sendiri**.
 Paket ini tetap mempertahankan seluruh fitur versi sebelumnya:
 Status Catatan, filter, sort, download, layout kolom RH, sinkronisasi Keterangan,
 Evaluasi Bulanan/Mingguan, Komoditas, Matriks Komoditas, Pasar, dan Harga RH.
+
+
+## Logika Final Arah Berbeda Sendiri v5
+
+Tambahan aturan:
+- Jika **tepat 2 kabupaten/kota bernilai 100**, maka **tidak ada highlight ungu sama sekali**, apa pun nilai pada dua wilayah lainnya.
+
+Contoh:
+- `100, 100, 103, 99` → tidak ada ungu.
+- `100, 100, 96, 105` → tidak ada ungu.
+- `100, 100, 100, 101` → 101 ungu.
+- `100, 100, 100, 93` → 93 ungu.
+- `99, 103, 100, 99` → 103 ungu.
+- `100.41, 100.10, 99, 100` → 99 ungu.
+- `101, 98, 97, 96` → 101 ungu.
+- `99, 102, 103, 104` → 99 ungu.
+
+Nilai 100 tetap diperlakukan sebagai nilai netral.
+Fitur lain tetap sama dengan versi sebelumnya.
